@@ -3,7 +3,7 @@
 **Wuxia Scrolls** is a modern web platform designed for reading Wuxia, Xianxia, and Fantasy novels. Built with a focus on immersion, aesthetics, and user experience.
 
 ## 📸 Preview
-![CelestialScrolls Preview](./public/readme/review.webp)
+![CelestialScrolls Preview](./public/readme/preview.jpeg)
 
 
 ## 🌟 Features
