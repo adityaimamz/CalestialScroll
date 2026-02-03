@@ -7,8 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowLeft } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ChapterFormData {
   chapter_number: number;
@@ -219,15 +222,37 @@ export default function ChapterForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="content">Isi Chapter</Label>
-                  <Textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    placeholder="Tulis isi chapter di sini..."
-                    rows={20}
-                    className="font-mono"
-                  />
+                  <Label>Isi Chapter</Label>
+                  <Tabs defaultValue="write" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-2">
+                      <TabsTrigger value="write">Write</TabsTrigger>
+                      <TabsTrigger value="preview">Preview</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="write">
+                        <Textarea
+                            id="content"
+                            value={formData.content}
+                            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                            placeholder="Tulis isi chapter di sini (Mendukung Markdown)..."
+                            rows={20}
+                            className="font-mono"
+                        />
+                        <p className="text-xs text-muted-foreground mt-2">
+                            Mendukung format Markdown: **bold**, *italic*, # Heading, dll.
+                        </p>
+                    </TabsContent>
+
+                    <TabsContent value="preview">
+                        <div className="border rounded-md p-4 min-h-[400px] bg-background">
+                            <article className="prose dark:prose-invert max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {formData.content || "*Belum ada konten*"}
+                                </ReactMarkdown>
+                            </article>
+                        </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               </CardContent>
             </Card>

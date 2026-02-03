@@ -89,6 +89,7 @@ const GenresSection = () => {
         {genreNovels[activeGenre]?.map((novel) => (
           <NovelCard
             key={novel.id}
+            id={novel.id}
             title={novel.title}
             cover={novel.cover}
             rating={novel.rating}

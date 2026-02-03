@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Novel", url: "/admin/novels", icon: BookText },
-  { title: "Chapters", url: "/admin/chapters", icon: FileText },
+  // { title: "Chapters", url: "/admin/chapters", icon: FileText },
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ];

@@ -1,38 +1,55 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 import SectionHeader from "@/components/SectionHeader";
 
-const topSeries = [
-  {
-    id: 1,
-    title: "Against the Gods",
-    description: "Mythical Abode Mountain, Cloud's End Cliff, the most dangerous place in the Azure Cloud Continent...",
-    genre: "Xianxia",
-    gradient: "from-violet-900/80 to-purple-900/80",
-  },
-  {
-    id: 2,
-    title: "Martial World",
-    description: "In the divine realm, countless worlds move through the void, and martial arts reign supreme...",
-    genre: "Wuxia",
-    gradient: "from-blue-900/80 to-cyan-900/80",
-  },
-  {
-    id: 3,
-    title: "Coiling Dragon",
-    description: "The ring, passed down by his ancestors, sparks Linley's destiny as a legendary warrior...",
-    genre: "Fantasy",
-    gradient: "from-amber-900/80 to-orange-900/80",
-  },
-  {
-    id: 4,
-    title: "Stellar Transformations",
-    description: "A journey through the cosmos, where cultivation leads to the transformation of stars...",
-    genre: "Xianxia",
-    gradient: "from-emerald-900/80 to-teal-900/80",
-  },
+type Novel = Tables<"novels">;
+
+const GRADIENTS = [
+  "from-violet-900/80 to-purple-900/80",
+  "from-blue-900/80 to-cyan-900/80",
+  "from-amber-900/80 to-orange-900/80",
+  "from-emerald-900/80 to-teal-900/80",
 ];
 
 const TopSeriesSection = () => {
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTopSeries();
+  }, []);
+
+  const fetchTopSeries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("novels")
+        .select("*")
+        .order("rating", { ascending: false })
+        .limit(4);
+
+      if (error) throw error;
+      setNovels(data || []);
+    } catch (error) {
+      console.error("Error fetching top series:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="section-spacing section-container flex justify-center py-10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </section>
+    );
+  }
+
+  if (novels.length === 0) return null;
+
   return (
     <section className="section-spacing section-container">
       <SectionHeader 
@@ -42,22 +59,24 @@ const TopSeriesSection = () => {
       />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {topSeries.map((series, index) => (
+        {novels.map((novel, index) => (
           <div
-            key={series.id}
-            className={`relative overflow-hidden rounded-xl p-6 bg-gradient-to-br ${series.gradient} border border-border/50 group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-card`}
+            key={novel.id}
+            className={`relative overflow-hidden rounded-xl p-6 bg-gradient-to-br ${GRADIENTS[index % GRADIENTS.length]} border border-border/50 group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-card`}
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <div className="relative z-10">
-              <span className="genre-pill mb-3 inline-block">{series.genre}</span>
+              <span className="genre-pill mb-3 inline-block capitalize">
+                {novel.genres?.[0] || "Fantasy"}
+              </span>
               <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-                {series.title}
+                {novel.title}
               </h3>
               <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                {series.description}
+                {novel.description}
               </p>
-              <Button variant="surface" size="sm">
-                Learn More
+              <Button variant="surface" size="sm" asChild>
+                <Link to={`/series/${novel.slug}`}>Learn More</Link>
               </Button>
             </div>
             

@@ -1,48 +1,131 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Menu, Home, BookOpen, ArrowLeft, List } from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu, Home, BookOpen, ArrowLeft, List, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ReaderSettings from "@/components/ReaderSettings";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import { useToast } from "@/hooks/use-toast";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { useAuth } from "@/components/auth/AuthProvider";
 
-// Mock Data
-const chapterContent = `
-  <p>The sky was vast and endless, covered in clouds that swirled like ink in water. Lin Chen stood at the edge of the Precipice of Forgotten Souls, the wind howling around him like the wails of ghosts.</p>
-  
-  <p>"Three years," he whispered, his voice barely audible over the gale. "It has been three years since I was cast down."</p>
-  
-  <p>His robes, tattered and stained with the dust of the mortal realm, flapped violently. Yet, his eyes burned with a fire that refused to be extinguished. In his hand, he clutched a jade pendant, its surface warm against his palm.</p>
-  
-  <br />
-  <hr />
-  <br />
+type Chapter = Tables<"chapters">;
+type Novel = Tables<"novels">;
 
-  <p>The cultivation world of the Azure Dragon Continent was ruthless. The strong preyed on the weak, and the weak had no choice but to submit or perish. Lin Chen had learned this lesson the hard way. Born into the prestigious Lin Clan, he was once hailed as a genius. But when his meridian was crippled by a jealous rival, he was discarded like trash.</p>
-  
-  <p>But they didn't know about the pendant. They didn't know about the voice that spoke to him in his dreams, guiding him to this very spot.</p>
-  
-  <p>He took a deep breath, the cold mountain air filling his lungs. "Master," he called out to the void. "I am ready."</p>
-  
-  <p>Suddenly, the jade pendant glowed with a blinding light. The space in front of him rippled, and a portal opened—a gateway to a destiny that would shake the heavens themselves.</p>
-  
-  <p>Stepping forward, Lin Chen didn't look back. The path of the Immortal Sovereign had begun.</p>
-`;
-
-const chapters = Array.from({ length: 50 }, (_, i) => ({
-  id: i + 1,
-  title: `Chapter ${i + 1}`,
-}));
+type ChapterListItem = Pick<Chapter, "id" | "title" | "chapter_number">;
 
 const ChapterReader = () => {
-  const { id, chapterId } = useParams();
+  const { id: novelSlug, chapterId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
   
+  const [novel, setNovel] = useState<Novel | null>(null);
+  const [chapter, setChapter] = useState<Chapter | null>(null);
+  const [chaptersList, setChaptersList] = useState<ChapterListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [fontSize, setFontSize] = useState(18);
   const [fontFamily, setFontFamily] = useState("sans");
   const [theme, setTheme] = useState<'light' | 'sepia' | 'dark'>("dark");
   const [showControls, setShowControls] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Fetch data
+  useEffect(() => {
+    if (novelSlug && chapterId) {
+      if (!novel) {
+        // Initial load: Fetch Novel & All Chapters list (for sidebar/navigation)
+        fetchNovelAndAllChapters(novelSlug, parseInt(chapterId));
+      } else {
+        // Novel already loaded, just fetch specific chapter content if we changed chapters
+        fetchChapterContent(novel.id, parseInt(chapterId));
+      }
+    }
+  }, [novelSlug, chapterId]);
+
+  const fetchNovelAndAllChapters = async (slug: string, chapterNum: number) => {
+    setLoading(true);
+    try {
+       // 1. Fetch Novel
+       const { data: novelData, error: novelError } = await supabase
+        .from("novels")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle();
+
+        if (novelError) throw novelError;
+        if (!novelData) {
+            toast({ title: "Error", description: "Novel not found", variant: "destructive" });
+            navigate("/series");
+            return;
+        }
+        setNovel(novelData);
+
+        // 2. Fetch Chapters List (Lightweight, just id, title, number)
+        const { data: listData, error: listError } = await supabase
+            .from("chapters")
+            .select("id, title, chapter_number")
+            .eq("novel_id", novelData.id)
+            .order("chapter_number", { ascending: true });
+
+        if (listError) throw listError;
+        setChaptersList(listData || []);
+
+        // 3. Fetch Current Chapter Content
+        await fetchChapterContent(novelData.id, chapterNum);
+
+    } catch (error) {
+        console.error("Error initializing reader:", error);
+    } 
+  };
+
+  const fetchChapterContent = async (novelId: string, chapterNum: number) => {
+    try {
+        const { data, error } = await supabase
+            .from("chapters")
+            .select("*")
+            .eq("novel_id", novelId)
+            .eq("chapter_number", chapterNum)
+            .maybeSingle();
+
+        if (error) throw error;
+        
+        if (!data) {
+             toast({ title: "Error", description: "Chapter not found", variant: "destructive" });
+        } else {
+            setChapter(data);
+             // Scroll to top on new chapter
+            window.scrollTo(0, 0);
+
+            // Record reading history if user is logged in
+            if (user) {
+                recordReadHistory(novelId, data.id);
+            }
+        }
+    } catch(error) {
+         console.error("Error fetching chapter content:", error);
+    } finally {
+        setLoading(false);
+    }
+  }
+
+  const recordReadHistory = async (novelId: string, chapterId: string) => {
+    if (!user) return;
+    try {
+        await supabase.from("reading_history").upsert({
+            user_id: user.id,
+            novel_id: novelId,
+            chapter_id: chapterId,
+            read_at: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error("Error updating reading history:", error);
+    }
+  };
 
   // Hide controls on scroll down, show on scroll up
   useEffect(() => {
@@ -87,19 +170,31 @@ const ChapterReader = () => {
     }
   };
 
-  const currentChapter = parseInt(chapterId || "1");
+  const currentChapterNum = parseInt(chapterId || "1");
+  const hasNext = chaptersList.some(c => c.chapter_number === currentChapterNum + 1);
+  const hasPrev = chaptersList.some(c => c.chapter_number === currentChapterNum - 1);
 
   const handleNext = () => {
-    navigate(`/series/${id}/chapter/${currentChapter + 1}`);
-    window.scrollTo(0, 0);
+    if (hasNext) {
+      navigate(`/series/${novelSlug}/chapter/${currentChapterNum + 1}`);
+    }
   };
 
   const handlePrev = () => {
-    if (currentChapter > 1) {
-      navigate(`/series/${id}/chapter/${currentChapter - 1}`);
-      window.scrollTo(0, 0);
+    if (hasPrev) {
+      navigate(`/series/${novelSlug}/chapter/${currentChapterNum - 1}`);
     }
   };
+
+  if (loading) {
+    return (
+        <div className={`min-h-screen flex items-center justify-center ${getThemeColors()}`}>
+             <Loader2 className="h-10 w-10 animate-spin" />
+        </div>
+    );
+  }
+
+  if (!chapter) return null;
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${getThemeColors()}`}>
@@ -111,12 +206,12 @@ const ChapterReader = () => {
       >
         <div className="section-container h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/series/${id}`)}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/series/${novelSlug}`)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold line-clamp-1">Immortal Sovereign's Path</span>
-              <span className="text-xs text-muted-foreground">Chapter {currentChapter}</span>
+              <span className="text-sm font-semibold line-clamp-1">{novel?.title}</span>
+              <span className="text-xs text-muted-foreground">Chapter {chapter.chapter_number}</span>
             </div>
           </div>
 
@@ -142,17 +237,16 @@ const ChapterReader = () => {
                 </SheetHeader>
                 <ScrollArea className="h-[calc(100vh-80px)] mt-4">
                   <div className="flex flex-col gap-1">
-                    {chapters.map((ch) => (
+                    {chaptersList.map((ch) => (
                       <Button
                         key={ch.id}
-                        variant={ch.id === currentChapter ? "secondary" : "ghost"}
+                        variant={ch.chapter_number === currentChapterNum ? "secondary" : "ghost"}
                         className="justify-start"
                         onClick={() => {
-                          navigate(`/series/${id}/chapter/${ch.id}`);
-                          /* Close sheet automatically would require state control of sheet open */
+                          navigate(`/series/${novelSlug}/chapter/${ch.chapter_number}`);
                         }}
                       >
-                        {ch.title}
+                       Chapter {ch.chapter_number}: {ch.title}
                       </Button>
                     ))}
                   </div>
@@ -165,11 +259,16 @@ const ChapterReader = () => {
 
       {/* Content Area */}
       <main className="max-w-3xl mx-auto px-6 py-24 md:py-32">
+        <h1 className="text-2xl md:text-3xl font-bold mb-8 text-center">
+            {chapter.title}
+        </h1>
         <article 
-          className={`prose max-w-none ${fontFamily === 'serif' ? 'font-serif' : 'font-sans'}`}
+          className={`prose max-w-none ${fontFamily === 'serif' ? 'font-serif' : 'font-sans'} ${theme === 'dark' ? 'prose-invert' : ''}`}
           style={{ fontSize: `${fontSize}px` }}
         >
-          <div dangerouslySetInnerHTML={{ __html: chapterContent }} />
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {chapter.content || "No content."}
+          </ReactMarkdown>
         </article>
       </main>
 
@@ -182,7 +281,7 @@ const ChapterReader = () => {
         <div className="section-container h-16 flex items-center justify-between">
           <Button 
             variant="ghost" 
-            disabled={currentChapter <= 1}
+            disabled={!hasPrev}
             onClick={handlePrev}
             className="w-1/3"
           >
@@ -191,12 +290,13 @@ const ChapterReader = () => {
           </Button>
           
           <span className="text-sm font-medium text-muted-foreground">
-            {currentChapter} / {chapters.length}
+             {/* Find index of current chapter in the list to show position */}
+            {chaptersList.findIndex(c => c.chapter_number === currentChapterNum) + 1} / {chaptersList.length}
           </span>
 
           <Button 
             variant="ghost" 
-            disabled={currentChapter >= chapters.length}
+            disabled={!hasNext}
             onClick={handleNext}
             className="w-1/3"
           >
@@ -208,7 +308,5 @@ const ChapterReader = () => {
     </div>
   );
 };
-
- 
 
 export default ChapterReader;

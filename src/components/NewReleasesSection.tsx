@@ -1,50 +1,56 @@
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 import NovelCard from "@/components/NovelCard";
 import SectionHeader from "@/components/SectionHeader";
-import novelCover1 from "@/assets/novel-cover-1.jpg";
-import novelCover2 from "@/assets/novel-cover-2.jpg";
-import novelCover3 from "@/assets/novel-cover-3.jpg";
-import novelCover4 from "@/assets/novel-cover-4.jpg";
 
-const newReleases = [
-  {
-    id: 1,
-    title: "Sovereign of Darkness",
-    cover: novelCover1,
-    rating: 4.8,
-    status: "ongoing" as const,
-    chapters: 24,
-    genre: "Wuxia",
-  },
-  {
-    id: 2,
-    title: "Heaven's Chosen One",
-    cover: novelCover2,
-    rating: 4.6,
-    status: "ongoing" as const,
-    chapters: 18,
-    genre: "Xianxia",
-  },
-  {
-    id: 3,
-    title: "Reborn as a Dragon",
-    cover: novelCover3,
-    rating: 4.7,
-    status: "ongoing" as const,
-    chapters: 32,
-    genre: "Fantasy",
-  },
-  {
-    id: 4,
-    title: "Immortal Academy",
-    cover: novelCover4,
-    rating: 4.5,
-    status: "ongoing" as const,
-    chapters: 15,
-    genre: "School",
-  },
-];
+type Novel = Tables<"novels"> & {
+  chapters_count?: number;
+};
 
 const NewReleasesSection = () => {
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchNewReleases();
+  }, []);
+
+  const fetchNewReleases = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("novels")
+        .select("*, chapters(count)")
+        .order("created_at", { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+
+      if (data) {
+        const novelsWithChapterCount = data.map(novel => ({
+          ...novel,
+          chapters_count: novel.chapters?.[0]?.count || 0,
+        }));
+        setNovels(novelsWithChapterCount);
+      }
+    } catch (error) {
+      console.error("Error fetching new releases:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="section-spacing section-container flex justify-center py-10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </section>
+    );
+  }
+
+  if (novels.length === 0) return null;
+
   return (
     <section className="section-spacing section-container">
       <SectionHeader 
@@ -54,15 +60,17 @@ const NewReleasesSection = () => {
       />
       
       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-        {newReleases.map((novel) => (
+        {novels.map((novel) => (
           <NovelCard
             key={novel.id}
+            id={novel.id}
+            slug={novel.slug}
             title={novel.title}
-            cover={novel.cover}
-            rating={novel.rating}
-            status={novel.status}
-            chapters={novel.chapters}
-            genre={novel.genre}
+            cover={novel.cover_url || ""}
+            rating={novel.rating || 0}
+            status={novel.status as any}
+            chapters={novel.chapters_count || 0}
+            genre={novel.genres?.[0] || "Unknown"}
             size="medium"
           />
         ))}

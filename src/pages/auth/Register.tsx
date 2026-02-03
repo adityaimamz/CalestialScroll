@@ -61,6 +61,7 @@ export default function Register() {
 
       navigate("/login");
     } catch (error: any) {
+      console.error("FULL REGISTRATION ERROR:", error);
       toast({
         title: "Registrasi gagal",
         description: error.message || "Terjadi kesalahan saat registrasi.",

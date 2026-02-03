@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Filter, ChevronDown, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Filter, ChevronDown, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,78 +10,91 @@ import {
 } from "@/components/ui/dropdown-menu";
 import NovelCard from "@/components/NovelCard";
 import SectionHeader from "@/components/SectionHeader";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock Data
-const allNovels = [
-  {
-    id: 1,
-    title: "Immortal Sovereign's Path",
-    cover: "https://images.unsplash.com/photo-1614726365723-49cfaeb5d8c7?q=80&w=300&auto=format&fit=crop",
-    rating: 4.9,
-    status: "ongoing" as const,
-    chapters: 1847,
-    genre: "Xianxia",
-  },
-  {
-    id: 2,
-    title: "The Alchemist's God",
-    cover: "https://images.unsplash.com/photo-1635805737707-575885ab0820?q=80&w=300&auto=format&fit=crop",
-    rating: 4.7,
-    status: "ongoing" as const,
-    chapters: 890,
-    genre: "Fantasy",
-  },
-  {
-    id: 3,
-    title: "Martial Peak Ascension",
-    cover: "https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80&w=300&auto=format&fit=crop",
-    rating: 4.5,
-    status: "completed" as const,
-    chapters: 3500,
-    genre: "Martial Arts",
-  },
-  {
-    id: 4,
-    title: "Sword of the Void",
-    cover: "https://images.unsplash.com/photo-1592496001020-d31bd830651f?q=80&w=300&auto=format&fit=crop",
-    rating: 4.8,
-    status: "ongoing" as const,
-    chapters: 420,
-    genre: "Wuxia",
-  },
-  {
-    id: 5,
-    title: "Dragon King's Son-in-Law",
-    cover: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=300&auto=format&fit=crop",
-    rating: 4.6,
-    status: "ongoing" as const,
-    chapters: 120,
-    genre: "Urban",
-  },
-  {
-    id: 6,
-    title: "Reincarnated as a Slime",
-    cover: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=300&auto=format&fit=crop",
-    rating: 4.9,
-    status: "ongoing" as const,
-    chapters: 600,
-    genre: "Isekai",
-  },
-];
+type Novel = Tables<"novels"> & {
+  chapters_count?: number;
+};
 
-const genres = ["All", "Xianxia", "Wuxia", "Fantasy", "Martial Arts", "Urban", "Isekai"];
+const genres = ["All", "Wuxia", "Xianxia", "Xuanhuan", "Fantasy", "Martial Arts", "Romance", "Action", "Adventure"];
 const sortOptions = ["Popular", "Newest", "Rating", "Alphabetical"];
 
 const Catalog = () => {
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [sortBy, setSortBy] = useState("Popular");
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
 
-  const filteredNovels = allNovels.filter((novel) => {
-    const matchesGenre = selectedGenre === "All" || novel.genre === selectedGenre;
-    const matchesSearch = novel.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesGenre && matchesSearch;
-  });
+  useEffect(() => {
+    // Debounce search to avoid too many requests
+    const timer = setTimeout(() => {
+      fetchNovels();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [selectedGenre, sortBy, searchQuery]);
+
+  const fetchNovels = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from("novels")
+        .select("*, chapters(count)");
+
+      // Search
+      if (searchQuery) {
+        query = query.ilike("title", `%${searchQuery}%`);
+      }
+
+      // Filter
+      if (selectedGenre !== "All") {
+        query = query.contains("genres", [selectedGenre]);
+      }
+
+      // Sort
+      switch (sortBy) {
+        case "Popular":
+          query = query.order("views", { ascending: false });
+          break;
+        case "Newest":
+          query = query.order("created_at", { ascending: false });
+          break;
+        case "Rating":
+          query = query.order("rating", { ascending: false });
+          break;
+        case "Alphabetical":
+          query = query.order("title", { ascending: true });
+          break;
+        default:
+          query = query.order("views", { ascending: false });
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (data) {
+        const novelsWithChapterCount = data.map(novel => ({
+          ...novel,
+          chapters_count: novel.chapters?.[0]?.count || 0,
+        }));
+        setNovels(novelsWithChapterCount);
+      }
+    } catch (error) {
+      console.error("Error fetching novels:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load novels",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -139,12 +152,27 @@ const Catalog = () => {
 
       {/* Grid */}
       <div className="section-container py-8">
-        <SectionHeader title={`All Series (${filteredNovels.length})`} />
+        <SectionHeader title={`All Series (${novels.length})`} />
         
-        {filteredNovels.length > 0 ? (
+        {loading ? (
+             <div className="flex justify-center py-20">
+             <Loader2 className="h-10 w-10 animate-spin text-primary" />
+           </div>
+        ) : novels.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-6">
-            {filteredNovels.map((novel) => (
-              <NovelCard key={novel.id} {...novel} size="medium" />
+            {novels.map((novel) => (
+              <NovelCard
+                key={novel.id}
+                title={novel.title}
+                cover={novel.cover_url || ""}
+                rating={novel.rating || 0}
+                status={novel.status as any}
+                chapters={novel.chapters_count || 0}
+                genre={novel.genres?.[0] || "Unknown"}
+                size="medium"
+                id={novel.id}
+                slug={novel.slug}
+              />
             ))}
           </div>
         ) : (

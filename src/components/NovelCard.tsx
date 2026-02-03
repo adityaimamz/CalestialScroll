@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface NovelCardProps {
   title: string;
@@ -8,6 +9,8 @@ interface NovelCardProps {
   chapters?: number;
   genre?: string;
   size?: "small" | "medium" | "large";
+  id?: string | number;
+  slug?: string;
 }
 
 const NovelCard = ({ 
@@ -17,7 +20,9 @@ const NovelCard = ({
   status,
   chapters,
   genre,
-  size = "medium" 
+  size = "medium",
+  id,
+  slug
 }: NovelCardProps) => {
   const sizeClasses = {
     small: "w-32",
@@ -31,8 +36,8 @@ const NovelCard = ({
     large: "h-64",
   };
 
-  return (
-    <div className={`novel-card group cursor-pointer flex-shrink-0 ${sizeClasses[size]}`}>
+  const Content = () => (
+    <>
       <div className={`relative overflow-hidden rounded-xl ${imageHeights[size]}`}>
         <img
           src={cover}
@@ -78,6 +83,23 @@ const NovelCard = ({
           {title}
         </h3>
       </div>
+    </>
+  );
+
+  const containerClasses = `novel-card group cursor-pointer flex-shrink-0 ${sizeClasses[size]}`;
+
+  if (id || slug) {
+    const linkTo = slug ? `/series/${slug}` : `/series/${id}`;
+    return (
+      <Link to={linkTo} className={containerClasses}>
+        <Content />
+      </Link>
+    );
+  }
+
+  return (
+    <div className={containerClasses}>
+      <Content />
     </div>
   );
 };

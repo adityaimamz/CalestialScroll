@@ -1,4 +1,3 @@
-import NovelCard from "@/components/NovelCard";
 import SectionHeader from "@/components/SectionHeader";
 import { Eye } from "lucide-react";
 import novelCover3 from "@/assets/novel-cover-3.jpg";

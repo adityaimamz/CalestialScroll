@@ -1,88 +1,76 @@
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 import NovelCard from "@/components/NovelCard";
 import SectionHeader from "@/components/SectionHeader";
-import novelCover1 from "@/assets/novel-cover-1.jpg";
-import novelCover2 from "@/assets/novel-cover-2.jpg";
-import novelCover3 from "@/assets/novel-cover-3.jpg";
-import novelCover4 from "@/assets/novel-cover-4.jpg";
-import novelCover5 from "@/assets/novel-cover-5.jpg";
-import novelCover6 from "@/assets/novel-cover-6.jpg";
 
-const popularNovels = [
-  {
-    id: 1,
-    title: "Moonlit Sword Maiden",
-    cover: novelCover1,
-    rating: 4.8,
-    status: "ongoing" as const,
-    chapters: 892,
-    genre: "Wuxia",
-  },
-  {
-    id: 2,
-    title: "Eternal Flame Cultivator",
-    cover: novelCover2,
-    rating: 4.7,
-    status: "ongoing" as const,
-    chapters: 1234,
-    genre: "Xianxia",
-  },
-  {
-    id: 3,
-    title: "Dragon Rider's Legacy",
-    cover: novelCover3,
-    rating: 4.9,
-    status: "completed" as const,
-    chapters: 2100,
-    genre: "Fantasy",
-  },
-  {
-    id: 4,
-    title: "Celestial Ascension",
-    cover: novelCover4,
-    rating: 4.6,
-    status: "ongoing" as const,
-    chapters: 456,
-    genre: "Xianxia",
-  },
-  {
-    id: 5,
-    title: "Blood Blade Chronicles",
-    cover: novelCover5,
-    rating: 4.8,
-    status: "ongoing" as const,
-    chapters: 678,
-    genre: "Action",
-  },
-  {
-    id: 6,
-    title: "Mystic Alchemist",
-    cover: novelCover6,
-    rating: 4.5,
-    status: "ongoing" as const,
-    chapters: 345,
-    genre: "Mystery",
-  },
-];
+type Novel = Tables<"novels"> & {
+  chapters_count?: number;
+};
 
 const PopularSection = () => {
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPopularNovels();
+  }, []);
+
+  const fetchPopularNovels = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("novels")
+        .select("*, chapters(count)")
+        .order("views", { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+
+      if (data) {
+        const novelsWithChapterCount = data.map(novel => ({
+          ...novel,
+          chapters_count: novel.chapters?.[0]?.count || 0,
+        }));
+        setNovels(novelsWithChapterCount);
+      }
+    } catch (error) {
+      console.error("Error fetching popular novels:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="section-spacing section-container flex justify-center py-10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </section>
+    );
+  }
+
+  if (novels.length === 0) return null;
+
   return (
     <section className="section-spacing section-container">
       <SectionHeader 
-        title="Popular This Week" 
+        title="Popular New" 
         subtitle="Trending among our community"
         viewAllLink="/popular"
       />
       
       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-        {popularNovels.map((novel) => (
+        {novels.map((novel) => (
           <NovelCard
             key={novel.id}
+            id={novel.id}
+            slug={novel.slug}
             title={novel.title}
-            cover={novel.cover}
-            rating={novel.rating}
-            status={novel.status}
-            chapters={novel.chapters}
-            genre={novel.genre}
+            cover={novel.cover_url || ""}
+            rating={novel.rating || 0}
+            status={novel.status as any}
+            chapters={novel.chapters_count || 0}
+            genre={novel.genres?.[0] || "Unknown"}
             size="medium"
           />
         ))}

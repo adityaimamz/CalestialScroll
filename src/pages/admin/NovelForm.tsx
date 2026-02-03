@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,27 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Loader2, ArrowLeft, X, Plus, Pencil, Trash2, FileText } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { format } from "date-fns";
 
 const AVAILABLE_GENRES = [
   "Wuxia", "Xianxia", "Xuanhuan", "Fantasy", "Romance", "Action",
@@ -32,6 +51,14 @@ interface NovelFormData {
   status: string;
   genres: string[];
   cover_url: string;
+}
+
+interface Chapter {
+  id: string;
+  chapter_number: number;
+  title: string;
+  published_at: string | null;
+  created_at: string;
 }
 
 export default function NovelForm() {
@@ -52,9 +79,15 @@ export default function NovelForm() {
     cover_url: "",
   });
 
+  // Chapter Management State
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [loadingChapters, setLoadingChapters] = useState(false);
+  const [deleteChapterId, setDeleteChapterId] = useState<string | null>(null);
+
   useEffect(() => {
     if (isEditing) {
       fetchNovel();
+      fetchChapters();
     }
   }, [id]);
 
@@ -88,6 +121,29 @@ export default function NovelForm() {
       navigate("/admin/novels");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchChapters = async () => {
+    setLoadingChapters(true);
+    try {
+      const { data, error } = await supabase
+        .from("chapters")
+        .select("*")
+        .eq("novel_id", id)
+        .order("chapter_number", { ascending: true });
+
+      if (error) throw error;
+      setChapters(data || []);
+    } catch (error) {
+      console.error("Error fetching chapters:", error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat daftar chapter",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingChapters(false);
     }
   };
 
@@ -183,6 +239,34 @@ export default function NovelForm() {
     }
   };
 
+  const handleDeleteChapter = async () => {
+    if (!deleteChapterId) return;
+
+    try {
+      const { error } = await supabase
+        .from("chapters")
+        .delete()
+        .eq("id", deleteChapterId);
+
+      if (error) throw error;
+
+      setChapters(chapters.filter((c) => c.id !== deleteChapterId));
+      toast({
+        title: "Berhasil",
+        description: "Chapter berhasil dihapus",
+      });
+    } catch (error) {
+      console.error("Error deleting chapter:", error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus chapter",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteChapterId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -204,156 +288,257 @@ export default function NovelForm() {
             {isEditing ? "Edit Novel" : "Tambah Novel Baru"}
           </h2>
           <p className="text-muted-foreground">
-            {isEditing ? "Update informasi novel" : "Isi form untuk menambahkan novel baru"}
+            {isEditing ? "Kelola informasi dan chapter novel" : "Isi form untuk menambahkan novel baru"}
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader>
-                <CardTitle>Informasi Novel</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Judul Novel *</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => handleTitleChange(e.target.value)}
-                    placeholder="Masukkan judul novel"
-                    required
-                  />
-                </div>
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="details">Detail Novel</TabsTrigger>
+          {isEditing && (
+            <TabsTrigger value="chapters" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Upload Chapter
+            </TabsTrigger>
+          )}
+        </TabsList>
 
-                <div className="space-y-2">
-                  <Label htmlFor="slug">Slug (URL)</Label>
-                  <Input
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="judul-novel"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    URL: /series/{formData.slug || "judul-novel"}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="author">Penulis</Label>
-                  <Input
-                    id="author"
-                    value={formData.author}
-                    onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                    placeholder="Nama penulis"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Sinopsis</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Tulis sinopsis novel..."
-                    rows={6}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader>
-                <CardTitle>Genre</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {AVAILABLE_GENRES.map((genre) => (
-                    <Badge
-                      key={genre}
-                      variant={formData.genres.includes(genre) ? "default" : "outline"}
-                      className="cursor-pointer transition-colors"
-                      onClick={() => handleGenreToggle(genre)}
-                    >
-                      {genre}
-                      {formData.genres.includes(genre) && (
-                        <X className="ml-1 h-3 w-3" />
-                      )}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader>
-                <CardTitle>Status & Cover</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ongoing">Ongoing</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="hiatus">Hiatus</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cover_url">Cover URL</Label>
-                  <Input
-                    id="cover_url"
-                    value={formData.cover_url}
-                    onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
-                    placeholder="https://..."
-                  />
-                  {formData.cover_url && (
-                    <div className="mt-2 aspect-[3/4] rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={formData.cover_url}
-                        alt="Cover preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/placeholder.svg";
-                        }}
+        <TabsContent value="details">
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Main Content */}
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="bg-card/50 border-border/50">
+                  <CardHeader>
+                    <CardTitle>Informasi Novel</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Judul Novel *</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => handleTitleChange(e.target.value)}
+                        placeholder="Masukkan judul novel"
+                        required
                       />
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
 
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => navigate("/admin/novels")}
-              >
-                Batal
-              </Button>
-              <Button type="submit" className="flex-1" disabled={saving}>
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditing ? "Update" : "Simpan"}
-              </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="slug">Slug (URL)</Label>
+                      <Input
+                        id="slug"
+                        value={formData.slug}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                        placeholder="judul-novel"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        URL: /series/{formData.slug || "judul-novel"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="author">Penulis</Label>
+                      <Input
+                        id="author"
+                        value={formData.author}
+                        onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                        placeholder="Nama penulis"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Sinopsis</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Tulis sinopsis novel..."
+                        rows={6}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-card/50 border-border/50">
+                  <CardHeader>
+                    <CardTitle>Genre</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {AVAILABLE_GENRES.map((genre) => (
+                        <Badge
+                          key={genre}
+                          variant={formData.genres.includes(genre) ? "default" : "outline"}
+                          className="cursor-pointer transition-colors"
+                          onClick={() => handleGenreToggle(genre)}
+                        >
+                          {genre}
+                          {formData.genres.includes(genre) && (
+                            <X className="ml-1 h-3 w-3" />
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                <Card className="bg-card/50 border-border/50">
+                  <CardHeader>
+                    <CardTitle>Status & Cover</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={formData.status}
+                        onValueChange={(value) => setFormData({ ...formData, status: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ongoing">Ongoing</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="hiatus">Hiatus</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="cover_url">Cover URL</Label>
+                      <Input
+                        id="cover_url"
+                        value={formData.cover_url}
+                        onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
+                        placeholder="https://..."
+                      />
+                      {formData.cover_url && (
+                        <div className="mt-2 aspect-[3/4] rounded-lg overflow-hidden bg-muted">
+                          <img
+                            src={formData.cover_url}
+                            alt="Cover preview"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => navigate("/admin/novels")}
+                  >
+                    Batal
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={saving}>
+                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isEditing ? "Update" : "Simpan"}
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </form>
+          </form>
+        </TabsContent>
+
+        <TabsContent value="chapters">
+          <Card className="bg-card/50 border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Daftar Chapter</CardTitle>
+              <Button asChild>
+                <Link to={`/admin/novels/${id}/chapters/new`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Tambah Chapter
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-20">No.</TableHead>
+                    <TableHead>Judul</TableHead>
+                    <TableHead>Tanggal Publish</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingChapters ? (
+                     <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ) : chapters.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        Belum ada chapter. Silakan tambah chapter baru.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    chapters.map((chapter) => (
+                      <TableRow key={chapter.id}>
+                        <TableCell className="font-medium">{chapter.chapter_number}</TableCell>
+                        <TableCell>{chapter.title}</TableCell>
+                        <TableCell>
+                          {chapter.published_at
+                            ? format(new Date(chapter.published_at), "dd MMM yyyy")
+                            : <Badge variant="secondary">Draft</Badge>}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" asChild>
+                              <Link to={`/admin/novels/${id}/chapters/${chapter.id}/edit`}>
+                                <Pencil className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleteChapterId(chapter.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={!!deleteChapterId} onOpenChange={() => setDeleteChapterId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Chapter?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Chapter akan dihapus permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteChapter} className="bg-destructive text-destructive-foreground">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
