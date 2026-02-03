@@ -16,6 +16,7 @@ import Catalog from "./pages/Catalog";
 import NovelDetail from "./pages/NovelDetail";
 import ChapterReader from "./pages/ChapterReader";
 import Bookmark from "./pages/Bookmark";
+import Genres from "./pages/Genres";
 import NotFound from "./pages/NotFound";
 
 // Auth pages
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/series" element={<Catalog />} />
                 <Route path="/series/:id" element={<NovelDetail />} />
                 <Route path="/bookmarks" element={<Bookmark />} />
+                <Route path="/genres" element={<Genres />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="*" element={<NotFound />} />

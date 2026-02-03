@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useAuth } from "@/components/auth/AuthProvider";
+import CommentsSection from "@/components/CommentsSection";
 
 type Chapter = Tables<"chapters">;
 type Novel = Tables<"novels">;
@@ -266,10 +267,19 @@ const ChapterReader = () => {
           className={`prose max-w-none ${fontFamily === 'serif' ? 'font-serif' : 'font-sans'} ${theme === 'dark' ? 'prose-invert' : ''}`}
           style={{ fontSize: `${fontSize}px` }}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown 
+            remarkPlugins={[remarkGfm]}
+            components={{
+              p: ({node, ...props}) => <p className="mb-8 leading-loose" {...props} />
+            }}
+          >
             {chapter.content || "No content."}
           </ReactMarkdown>
         </article>
+
+        <div className="mt-16 pt-8 border-t border-border">
+            {novel && <CommentsSection novelId={novel.id} chapterId={chapter.id} />}
+        </div>
       </main>
 
       {/* Bottom Navigation */}

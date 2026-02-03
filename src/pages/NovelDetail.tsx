@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Star, BookOpen, Clock, Tag, ChevronLeft, List, Info, PlayCircle, Loader2, Search, ArrowUp, ArrowDown } from "lucide-react";
+import { Star, BookOpen, Clock, Tag, ChevronLeft, List, Info, PlayCircle, Loader2, Search, ArrowUp, ArrowDown, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import CommentsSection from "@/components/CommentsSection";
 
 type Novel = Tables<"novels">;
 type Chapter = Tables<"chapters">;
@@ -455,6 +456,10 @@ const NovelDetail = () => {
             </div>
           </TabsContent>
         </Tabs>
+      </div>
+
+      <div className="section-container mt-28 md:mt-24">
+        <CommentsSection novelId={novel.id} />
       </div>
     </div>
   );

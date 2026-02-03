@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useSearchParams } from "react-router-dom";
 import NovelCard from "@/components/NovelCard";
 import SectionHeader from "@/components/SectionHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,12 +23,26 @@ const genres = ["All", "Wuxia", "Xianxia", "Xuanhuan", "Fantasy", "Martial Arts"
 const sortOptions = ["Popular", "Newest", "Rating", "Alphabetical"];
 
 const Catalog = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const genreParam = searchParams.get("genre");
+  
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [sortBy, setSortBy] = useState("Popular");
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (genreParam) {
+      // Find matching genre case-insensitive or just use capitalize
+      const matchedGenre = genres.find(g => g.toLowerCase() === genreParam.toLowerCase()) || 
+                           genreParam.charAt(0).toUpperCase() + genreParam.slice(1);
+      setSelectedGenre(matchedGenre);
+    } else {
+        setSelectedGenre("All");
+    }
+  }, [genreParam]);
 
   useEffect(() => {
     // Debounce search to avoid too many requests
@@ -96,12 +111,23 @@ const Catalog = () => {
     }
   };
 
+  const handleGenreSelect = (genre: string) => {
+    setSelectedGenre(genre);
+    if (genre === "All") {
+        setSearchParams({});
+    } else {
+        setSearchParams({ genre: genre.toLowerCase() });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="bg-surface border-b border-border py-8">
         <div className="section-container">
-          <h1 className="text-3xl font-bold mb-4">Browse Series</h1>
+          <h1 className="text-3xl font-bold mb-4">
+             {selectedGenre !== "All" ? `Archive for ${selectedGenre}` : "Browse Series"}
+          </h1>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -123,7 +149,7 @@ const Catalog = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   {genres.map((genre) => (
-                    <DropdownMenuItem key={genre} onClick={() => setSelectedGenre(genre)}>
+                    <DropdownMenuItem key={genre} onClick={() => handleGenreSelect(genre)}>
                       {genre}
                     </DropdownMenuItem>
                   ))}

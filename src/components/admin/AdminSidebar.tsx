@@ -21,7 +21,7 @@ const menuItems = [
   { title: "Announcements", url: "/admin/announcements", icon: Megaphone },
   // { title: "Chapters", url: "/admin/chapters", icon: FileText },
   { title: "Users", url: "/admin/users", icon: Users },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
+  // { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
 export function AdminSidebar() {

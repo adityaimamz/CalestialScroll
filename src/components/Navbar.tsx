@@ -30,7 +30,7 @@ const Navbar = () => {
     { label: "Home", href: "/", icon: Home },
     { label: "Series", href: "/series", icon: BookOpen },
     { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
-    // { label: "Resources", href: "/resources", icon: Layers },
+    { label: "Genres", href: "/genres", icon: Layers },
   ];
 
   return (
