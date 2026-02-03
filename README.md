@@ -1,6 +1,6 @@
-# Wuxia Scrolls - Immortal Library
+# Calestial Scrolls - Immortal Library
 
-**Wuxia Scrolls** is a modern web platform designed for reading Wuxia, Xianxia, and Fantasy novels. Built with a focus on immersion, aesthetics, and user experience.
+**Calestial Scrolls** is a modern web platform designed for reading Calestial, Xianxia, and Fantasy novels. Built with a focus on immersion, aesthetics, and user experience.
 
 ## 📸 Preview
 ![CelestialScrolls Preview](./public/readme/preview.jpeg)
@@ -30,8 +30,8 @@ Follow these steps to run the project locally:
 
 1.  **Clone the repository**
     ```bash
-    git clone https://github.com/adityaimamz/wuxia-scrolls.git
-    cd wuxia-scrolls
+    git clone https://github.com/adityaimamz/Calestial-scrolls.git
+    cd Calestial-scrolls
     ```
 
 2.  **Install dependencies**
@@ -57,4 +57,3 @@ Created and maintained by **Aditya Imam Zuhdi**.
 - **LinkedIn**: [Aditya Imam Zuhdi](https://www.linkedin.com/in/izaditya/)
 
 ---
-*Generated with ❤️ by Wuxia Scrolls Team*
