@@ -15,6 +15,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import UserProfileModal from "@/components/UserProfileModal";
 import UserBadge from "@/components/UserBadge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface CommentsSectionProps {
   novelId: string;
@@ -57,6 +65,10 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
   const [newComment, setNewComment] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // Report Modal State
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchComments();
@@ -279,21 +291,26 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
       toast({ title: "Login Required" });
       return;
     }
-    const reason = prompt("Please provide a reason for reporting this comment:");
-    if (!reason || reason.trim() === "") return;
+    setReportingCommentId(commentId);
+    setIsReportModalOpen(true);
+  };
+
+  const submitReport = async (reason: string) => {
+    if (!reportingCommentId || !user) return;
 
     try {
       const { error } = await supabase.from("comment_reports" as any).insert({
         user_id: user.id,
-        comment_id: commentId,
+        comment_id: reportingCommentId,
         reason: reason.trim(),
       });
       if (error) throw error;
       toast({ title: "Reported", description: "Comment has been reported for review." });
+      setIsReportModalOpen(false);
+      setReportingCommentId(null);
     } catch (error) {
       toast({ title: "Error", description: "Failed to report comment.", variant: "destructive" });
     }
-    return; // Explicit return void
   };
 
   return (
@@ -303,6 +320,13 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
         isOpen={isProfileOpen}
         onOpenChange={setIsProfileOpen}
       />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onOpenChange={setIsReportModalOpen}
+        onSubmit={submitReport}
+      />
+
       <h3 className="text-xl font-semibold">Comments ({comments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0)})</h3>
 
       {/* Main Comment Input */}
@@ -551,6 +575,57 @@ const CommentItem = ({
         </div>
       </div>
     </div>
+  );
+};
+
+const ReportModal = ({
+  isOpen,
+  onOpenChange,
+  onSubmit,
+}: {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (reason: string) => Promise<void>;
+}) => {
+  const [reason, setReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!reason.trim()) return;
+    setIsSubmitting(true);
+    await onSubmit(reason);
+    setIsSubmitting(false);
+    setReason("");
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Report Comment</DialogTitle>
+          <DialogDescription>
+            Please tell us why you are reporting this comment.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <Textarea
+            placeholder="Reason for reporting..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="min-h-[100px]"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={!reason.trim() || isSubmitting}>
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Submit Report
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
