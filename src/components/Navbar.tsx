@@ -335,10 +335,10 @@ export default function Navbar() {
                         <span className="text-xs text-muted-foreground">{user.email}</span>
                       </div>
                     </div>
-                    <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                    <Link to="/settings" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start">
                         <User className="mr-2 h-4 w-4" />
-                        Profile
+                        Settings
                       </Button>
                     </Link>
                     {isAdmin && (
