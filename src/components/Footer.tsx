@@ -1,19 +1,22 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, Github, Twitter, MessageCircle } from "lucide-react";
 
 const Footer = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const footerLinks = {
     discover: [
-      { label: "Popular Novels", href: "/popular" },
-      { label: "New Releases", href: "/new" },
-      { label: "Genres", href: "/genres" },
-      { label: "Rankings", href: "/rankings" },
+      { label: "Top Novels", href: "#popular" },
+      { label: "New Releases", href: "#new" },
+      { label: "Popular Genres", href: "#genres" },
+      { label: "Announcements", href: "#announcements" },
     ],
-    company: [
-      { label: "About Us", href: "/about" },
-      { label: "Contact", href: "/contact" },
-      { label: "Announcements", href: "/announcements" },
-      { label: "FAQ", href: "/faq" },
+    menu: [
+      { label: "Home", href: "/" },
+      { label: "Series", href: "/series" },
+      { label: "Bookmarks", href: "/bookmarks" },
+      { label: "Genres", href: "/genres" },
     ],
     legal: [
       { label: "Terms of Service", href: "/terms" },
@@ -28,6 +31,22 @@ const Footer = () => {
     { icon: Github, href: "#", label: "GitHub" },
   ];
 
+  const handleLinkClick = (e: React.MouseEvent, href: string) => {
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      const id = href.substring(1);
+
+      if (location.pathname === "/") {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      } else {
+        navigate(`/${href}`);
+      }
+    }
+  };
+
   return (
     <footer className="bg-surface border-t border-border mt-16">
       <div className="section-container py-12">
@@ -36,14 +55,16 @@ const Footer = () => {
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-primary-foreground" />
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+                  <img src="/favicon.ico" alt="Logo" className="w-full h-full object-cover" />
+                </div>
               </div>
               <span className="text-lg font-bold text-foreground">
                 Celestial<span className="text-primary">Scrolls</span>
               </span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
-              Your gateway to the world of Wuxia and Xianxia novels. Explore cultivation journeys and martial arts epics.
+              Tempat baca novel dengan kualitas terjemahan terbaik.
             </p>
             <div className="flex gap-3">
               {socialLinks.map((social) => {
@@ -68,12 +89,13 @@ const Footer = () => {
             <ul className="space-y-2">
               {footerLinks.discover.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    to={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  <a
+                    href={link.href}
+                    onClick={(e) => handleLinkClick(e, link.href)}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                   >
                     {link.label}
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -81,9 +103,9 @@ const Footer = () => {
 
           {/* Company */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Company</h4>
+            <h4 className="font-semibold text-foreground mb-4">Menu</h4>
             <ul className="space-y-2">
-              {footerLinks.company.map((link) => (
+              {footerLinks.menu.map((link) => (
                 <li key={link.label}>
                   <Link
                     to={link.href}

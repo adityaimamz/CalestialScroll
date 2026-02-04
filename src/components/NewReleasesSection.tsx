@@ -52,13 +52,13 @@ const NewReleasesSection = () => {
   if (novels.length === 0) return null;
 
   return (
-    <section className="section-spacing section-container">
-      <SectionHeader 
-        title="New Releases" 
+    <section className="section-spacing section-container" id="new">
+      <SectionHeader
+        title="New Releases"
         subtitle="Fresh stories just started"
         viewAllLink="/new"
       />
-      
+
       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
         {novels.map((novel) => (
           <NovelCard

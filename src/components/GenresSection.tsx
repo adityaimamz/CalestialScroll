@@ -81,24 +81,23 @@ const GenresSection = () => {
   if (genres.length === 0) return null;
 
   return (
-    <section className="section-spacing section-container">
-      <SectionHeader 
-        title="Popular Genres" 
+    <section className="section-spacing section-container" id="genres">
+      <SectionHeader
+        title="Popular Genres"
         subtitle="Explore stories by category"
         viewAllLink="/genres"
       />
-      
+
       {/* Genre Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
         {genres.map((genre) => (
           <button
             key={genre.id}
             onClick={() => setActiveGenre(genre.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-              activeGenre === genre.id
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${activeGenre === genre.id
                 ? "bg-primary text-primary-foreground shadow-glow-primary"
                 : "bg-surface text-muted-foreground hover:bg-surface-hover hover:text-foreground"
-            }`}
+              }`}
           >
             {genre.name}
           </button>
@@ -108,27 +107,27 @@ const GenresSection = () => {
       {/* Genre Novels Grid */}
       {novelsLoading ? (
         <div className="h-64 flex items-center justify-center">
-             <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : novels.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 animate-fade-in">
-            {novels.map((novel) => (
+          {novels.map((novel) => (
             <NovelCard
-                key={novel.id}
-                id={novel.id}
-                title={novel.title}
-                cover={novel.cover_url || ""}
-                rating={novel.rating || 0}
-                status={novel.status as any}
-                chapters={novel.chapters?.[0]?.count || 0}
-                size="large"
-                slug={novel.slug}
+              key={novel.id}
+              id={novel.id}
+              title={novel.title}
+              cover={novel.cover_url || ""}
+              rating={novel.rating || 0}
+              status={novel.status as any}
+              chapters={novel.chapters?.[0]?.count || 0}
+              size="large"
+              slug={novel.slug}
             />
-            ))}
+          ))}
         </div>
       ) : (
         <div className="h-40 flex flex-col items-center justify-center text-muted-foreground">
-            <p>No novels found in this genre yet.</p>
+          <p>No novels found in this genre yet.</p>
         </div>
       )}
     </section>

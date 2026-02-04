@@ -25,7 +25,7 @@ const AnnouncementsSection = () => {
   if (announcements.length === 0) return null;
 
   return (
-    <section className="section-container py-6">
+    <section className="section-container py-6" id="announcements">
       <div className="flex items-center gap-2 mb-4">
         <Megaphone className="w-5 h-5 text-accent" />
         <h3 className="font-semibold text-foreground">Announcements</h3>
@@ -35,7 +35,7 @@ const AnnouncementsSection = () => {
         {announcements.map((announcement) => (
           <div
             key={announcement.id}
-            className="flex items-center gap-3 min-w-[300px] p-4 bg-surface rounded-xl border border-border hover:bg-surface-hover transition-colors cursor-pointer"
+            className="flex items-center gap-3 min-w-[300px] flex-1 p-4 bg-surface rounded-xl border border-border hover:bg-surface-hover transition-colors cursor-pointer"
           >
             {/* <img
               src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"

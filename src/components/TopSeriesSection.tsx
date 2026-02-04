@@ -59,13 +59,13 @@ const TopSeriesSection = () => {
   if (novels.length === 0) return null;
 
   return (
-    <section className="section-spacing section-container">
-      <SectionHeader 
-        title="Top Series" 
+    <section className="section-spacing section-container" id="popular">
+      <SectionHeader
+        title="Top Series"
         subtitle="Most beloved stories by our readers"
         viewAllLink="/series"
       />
-      
+
       <Carousel
         opts={{
           align: "start",
@@ -79,60 +79,60 @@ const TopSeriesSection = () => {
               <div
                 className={`relative overflow-hidden rounded-xl h-full bg-gradient-to-br ${GRADIENTS[index % GRADIENTS.length]} border border-border/50 group cursor-pointer transition-all duration-300 hover:shadow-card flex flex-col sm:flex-row`}
               >
-                  {/* Cover Image - Left Side */}
-                  <div className="w-full sm:w-1/3 h-48 sm:h-auto relative shrink-0 overflow-hidden">
-                      {novel.cover_url ? (
-                          <img 
-                              src={novel.cover_url} 
-                              alt={novel.title} 
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                      ) : (
-                          <div className="w-full h-full bg-black/20 flex items-center justify-center">
-                              <span className="text-4xl">📚</span>
-                          </div>
-                      )}
-                      
-                      {/* Gradient Overlay for text readability on mobile if stacked, or just style */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent sm:bg-gradient-to-r sm:from-transparent sm:to-black/10" />
-                  </div>
-
-                  {/* Content - Right Side */}
-                  <div className="flex-1 p-6 flex flex-col justify-between relative z-10">
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                             <span className="genre-pill capitalize text-xs">
-                                {novel.genres?.[0] || "Fantasy"}
-                             </span>
-                             {novel.rating && (
-                                <span className="text-xs font-medium text-white/80 flex items-center gap-1">
-                                    ★ {novel.rating.toFixed(1)}
-                                </span>
-                             )}
-                        </div>
-                   
-                        <h3 className="text-xl font-bold text-white mb-2 line-clamp-2">
-                            {novel.title}
-                        </h3>
-                        <p className="text-sm text-white/80 mb-4 line-clamp-2">
-                            {novel.description}
-                        </p>
+                {/* Cover Image - Left Side */}
+                <div className="w-full sm:w-1/3 h-48 sm:h-auto relative shrink-0 overflow-hidden">
+                  {novel.cover_url ? (
+                    <img
+                      src={novel.cover_url}
+                      alt={novel.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-black/20 flex items-center justify-center">
+                      <span className="text-4xl">📚</span>
                     </div>
-                    
-                    <Button variant="secondary" size="sm" asChild className="w-fit">
-                        <Link to={`/series/${novel.slug}`}>Learn More</Link>
-                    </Button>
+                  )}
 
-                    {/* Decorative gradient inside the content area */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/5 to-transparent rounded-full -translate-y-8 translate-x-8 pointer-events-none" />
+                  {/* Gradient Overlay for text readability on mobile if stacked, or just style */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent sm:bg-gradient-to-r sm:from-transparent sm:to-black/10" />
+                </div>
+
+                {/* Content - Right Side */}
+                <div className="flex-1 p-6 flex flex-col justify-between relative z-10">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="genre-pill capitalize text-xs">
+                        {novel.genres?.[0] || "Fantasy"}
+                      </span>
+                      {novel.rating && (
+                        <span className="text-xs font-medium text-white/80 flex items-center gap-1">
+                          ★ {novel.rating.toFixed(1)}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-xl font-bold text-white mb-2 line-clamp-2">
+                      {novel.title}
+                    </h3>
+                    <p className="text-sm text-white/80 mb-4 line-clamp-2">
+                      {novel.description}
+                    </p>
                   </div>
+
+                  <Button variant="secondary" size="sm" asChild className="w-fit">
+                    <Link to={`/series/${novel.slug}`}>Learn More</Link>
+                  </Button>
+
+                  {/* Decorative gradient inside the content area */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/5 to-transparent rounded-full -translate-y-8 translate-x-8 pointer-events-none" />
+                </div>
               </div>
             </CarouselItem>
           ))}
         </CarouselContent>
         <div className="hidden md:block">
-            <CarouselPrevious className="-left-4 lg:-left-12" />
-            <CarouselNext className="-right-4 lg:-right-12" />
+          <CarouselPrevious className="-left-4 lg:-left-12" />
+          <CarouselNext className="-right-4 lg:-right-12" />
         </div>
       </Carousel>
     </section>
