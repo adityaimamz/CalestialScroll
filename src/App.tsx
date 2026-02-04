@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ScrollToTop from "@/components/ScrollToTop";
+import ScrollButtons from "@/components/ScrollButtons";
 import MainLayout from "@/components/layout/MainLayout";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -50,6 +51,7 @@ const App = () => (
           <BrowserRouter>
             <AuthListener />
             <ScrollToTop />
+            <ScrollButtons />
             <Routes>
               {/* Public Routes with MainLayout */}
               <Route element={<MainLayout />}>

@@ -13,6 +13,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import UserProfileModal from "@/components/UserProfileModal";
+import UserBadge from "@/components/UserBadge";
 
 interface CommentsSectionProps {
   novelId: string;
@@ -23,6 +25,7 @@ interface UserProfile {
   id: string;
   username: string | null;
   avatar_url: string | null;
+  read_count?: number; // Added read_count
 }
 
 interface CommentVote {
@@ -52,6 +55,8 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     fetchComments();
@@ -91,8 +96,23 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
           .select("id, username, avatar_url")
           .in("id", userIds);
 
+        // 2b. Fetch Reading Counts (Badges)
+        const { data: readingCounts } = await supabase.rpc("get_users_reading_counts" as any, {
+          user_ids: userIds,
+        });
+
+        const countsMap: Record<string, number> = {};
+        if (readingCounts && Array.isArray(readingCounts)) {
+          readingCounts.forEach((r: any) => {
+            countsMap[r.user_id] = r.count;
+          });
+        }
+
         profilesData?.forEach((p: any) => {
-          profilesMap[p.id] = p;
+          profilesMap[p.id] = {
+            ...p,
+            read_count: countsMap[p.id] || 0,
+          };
         });
       }
 
@@ -278,6 +298,11 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
 
   return (
     <div className="space-y-6">
+      <UserProfileModal
+        userId={selectedUserId}
+        isOpen={isProfileOpen}
+        onOpenChange={setIsProfileOpen}
+      />
       <h3 className="text-xl font-semibold">Comments ({comments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0)})</h3>
 
       {/* Main Comment Input */}
@@ -317,6 +342,10 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
               onVote={handleVote}
               onDelete={handleDelete}
               onReport={handleReport}
+              onUserClick={(userId) => {
+                setSelectedUserId(userId);
+                setIsProfileOpen(true);
+              }}
             />
           ))
         )}
@@ -380,7 +409,8 @@ const CommentItem = ({
   onReply,
   onVote,
   onDelete,
-  onReport
+  onReport,
+  onUserClick
 }: {
   comment: Comment;
   currentUserId?: string;
@@ -389,14 +419,20 @@ const CommentItem = ({
   onVote: (commentId: string, type: 1 | -1) => Promise<void>;
   onDelete: (commentId: string) => Promise<void>;
   onReport: (commentId: string) => Promise<void>;
+  onUserClick: (userId: string) => void;
 }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
+
+
   return (
     <div className="group animate-fade-in">
       <div className="flex gap-4">
-        <Avatar className="w-10 h-10 border border-border mt-1">
+        <Avatar
+          className="w-10 h-10 border border-border mt-1 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => onUserClick(comment.user_id)}
+        >
           <AvatarImage src={comment.profile?.avatar_url || ""} />
           <AvatarFallback>
             <UserIcon className="w-5 h-5 text-muted-foreground" />
@@ -407,12 +443,16 @@ const CommentItem = ({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm text-foreground">
+              <span
+                className="font-semibold text-sm text-foreground cursor-pointer hover:underline"
+                onClick={() => onUserClick(comment.user_id)}
+              >
                 {comment.profile?.username || "Anonymous User"}
               </span>
               <span className="text-xs text-muted-foreground">
                 • {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
               </span>
+              <UserBadge chapterCount={comment.profile?.read_count || 0} />
             </div>
 
             {/* Actions Menu */}
@@ -503,6 +543,7 @@ const CommentItem = ({
                   onVote={onVote}
                   onDelete={onDelete}
                   onReport={onReport}
+                  onUserClick={onUserClick}
                 />
               ))}
             </div>
