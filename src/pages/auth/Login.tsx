@@ -126,6 +126,14 @@ export default function Login() {
                 />
               </div>
             </div>
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Lupa password?
+              </Link>
+            </div>
             <Button type="submit" className="w-full mt-4" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Masuk
@@ -141,7 +149,7 @@ export default function Login() {
             </div>
           </div>
 
-          {/* <Button
+          <Button
             variant="outline"
             className="w-full"
             onClick={handleGoogleLogin}
@@ -166,7 +174,7 @@ export default function Login() {
               />
             </svg>
             Masuk dengan Google
-          </Button> */}
+          </Button>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">

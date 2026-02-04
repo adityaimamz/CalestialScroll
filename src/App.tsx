@@ -9,6 +9,7 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { AdminRoute } from "@/components/auth/AdminRoute";
+import { AuthListener } from "@/components/auth/AuthListener";
 
 // Public pages
 import Index from "./pages/Index";
@@ -22,6 +23,8 @@ import NotFound from "./pages/NotFound";
 // Auth pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import UpdatePassword from "./pages/auth/UpdatePassword";
 
 // Admin pages
 import Dashboard from "./pages/admin/Dashboard";
@@ -43,6 +46,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <AuthListener />
             <ScrollToTop />
             <Routes>
               {/* Public Routes with MainLayout */}
@@ -54,9 +58,11 @@ const App = () => (
                 <Route path="/genres" element={<Genres />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/update-password" element={<UpdatePassword />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
-              
+
               {/* Reader Route (No MainLayout/Navbar/Footer) */}
               <Route path="/series/:id/chapter/:chapterId" element={<ChapterReader />} />
 

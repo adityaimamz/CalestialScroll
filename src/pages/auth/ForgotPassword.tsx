@@ -1,0 +1,92 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Mail, ArrowLeft, BookOpen } from "lucide-react";
+
+export default function ForgotPassword() {
+    const [email, setEmail] = useState("");
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const { toast } = useToast();
+
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/update-password`,
+            });
+
+            if (error) throw error;
+
+            toast({
+                title: "Email terkirim!",
+                description: "Silakan cek email untuk link reset password Anda.",
+            });
+
+            // Optional: Navigate back to login after some time or let them stay
+        } catch (error: any) {
+            toast({
+                title: "Gagal mengirim email",
+                description: error.message || "Terjadi kesalahan.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
+            <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur">
+                <CardHeader className="space-y-1 text-center">
+                    <div className="flex justify-center mb-4">
+                        <Link to="/" className="flex items-center gap-2">
+                            <BookOpen className="h-8 w-8 text-primary" />
+                            <span className="text-2xl font-bold text-foreground">NovelVerse</span>
+                        </Link>
+                    </div>
+                    <CardTitle className="text-2xl">Lupa Password?</CardTitle>
+                    <CardDescription>
+                        Masukkan email Anda, kami akan mengirimkan link reset password.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleResetPassword} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="nama@email.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="pl-10"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Kirim Link Reset
+                        </Button>
+                    </form>
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                    <Link to="/login" className="flex items-center text-sm text-muted-foreground hover:text-primary">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Kembali ke Login
+                    </Link>
+                </CardFooter>
+            </Card>
+        </div>
+    );
+}
