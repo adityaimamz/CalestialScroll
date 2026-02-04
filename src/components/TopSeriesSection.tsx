@@ -62,7 +62,7 @@ const TopSeriesSection = () => {
     <section className="section-spacing section-container" id="popular">
       <SectionHeader
         title="Top Series"
-        subtitle="Most beloved stories by our readers"
+        subtitle="Series with highest ratings"
         viewAllLink="/series"
       />
 
@@ -105,7 +105,7 @@ const TopSeriesSection = () => {
                         {novel.genres?.[0] || "Fantasy"}
                       </span>
                       {novel.rating && (
-                        <span className="text-xs font-medium text-white/80 flex items-center gap-1">
+                        <span className="text-xs font-medium text-yellow-500 flex items-center gap-1">
                           ★ {novel.rating.toFixed(1)}
                         </span>
                       )}

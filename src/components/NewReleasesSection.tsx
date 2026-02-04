@@ -52,11 +52,11 @@ const NewReleasesSection = () => {
   if (novels.length === 0) return null;
 
   return (
-    <section className="section-spacing section-container" id="new">
+    <section className="section-spacing" id="new">
       <SectionHeader
         title="New Releases"
         subtitle="Fresh stories just started"
-        viewAllLink="/new"
+        viewAllLink="/series"
       />
 
       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
@@ -70,8 +70,9 @@ const NewReleasesSection = () => {
             rating={novel.rating || 0}
             status={novel.status as any}
             chapters={novel.chapters_count || 0}
-            genre={novel.genres?.[0] || "Unknown"}
+            // genre={novel.genres?.[0] || "Unknown"}
             size="medium"
+            lastUpdate={novel.updated_at}
           />
         ))}
       </div>

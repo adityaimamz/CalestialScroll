@@ -24,14 +24,23 @@ const GenresSection = () => {
       try {
         const { data, error } = await supabase
           .from("genres")
-          .select("*")
-          .order("name");
+          .select("*, novel_genres(count)");
 
         if (error) throw error;
 
         if (data && data.length > 0) {
-          setGenres(data);
-          setActiveGenre(data[0].id); // Set first genre as active
+          const sortedGenres = data
+            .map(g => ({
+              ...g,
+              count: g.novel_genres?.[0]?.count || 0
+            }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+
+          setGenres(sortedGenres);
+          if (sortedGenres.length > 0) {
+            setActiveGenre(sortedGenres[0].id);
+          }
         }
       } catch (error) {
         console.error("Error fetching genres:", error);
@@ -81,7 +90,7 @@ const GenresSection = () => {
   if (genres.length === 0) return null;
 
   return (
-    <section className="section-spacing section-container" id="genres">
+    <section className="section-spacing" id="genres">
       <SectionHeader
         title="Popular Genres"
         subtitle="Explore stories by category"
@@ -95,8 +104,8 @@ const GenresSection = () => {
             key={genre.id}
             onClick={() => setActiveGenre(genre.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${activeGenre === genre.id
-                ? "bg-primary text-primary-foreground shadow-glow-primary"
-                : "bg-surface text-muted-foreground hover:bg-surface-hover hover:text-foreground"
+              ? "bg-primary text-primary-foreground shadow-glow-primary"
+              : "bg-surface text-muted-foreground hover:bg-surface-hover hover:text-foreground"
               }`}
           >
             {genre.name}
@@ -110,7 +119,7 @@ const GenresSection = () => {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : novels.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 animate-fade-in">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in">
           {novels.map((novel) => (
             <NovelCard
               key={novel.id}
@@ -122,6 +131,7 @@ const GenresSection = () => {
               chapters={novel.chapters?.[0]?.count || 0}
               size="large"
               slug={novel.slug}
+              lastUpdate={novel.updated_at}
             />
           ))}
         </div>

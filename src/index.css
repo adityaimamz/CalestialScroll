@@ -180,7 +180,7 @@
 
   .genre-pill {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
-    @apply bg-primary/20 text-primary border border-primary/30;
+    @apply bg-blue-600 text-white border border-blue-400 font-bold shadow-sm;
   }
 
   .status-badge {
@@ -188,11 +188,11 @@
   }
 
   .status-badge-ongoing {
-    @apply bg-secondary/20 text-secondary border border-secondary/30;
+    @apply bg-blue-600 text-white border border-blue-400 font-bold shadow-sm;
   }
 
   .status-badge-completed {
-    @apply bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+    @apply bg-emerald-600 text-white border border-emerald-400 font-bold shadow-sm;
   }
 
   .glass-surface {

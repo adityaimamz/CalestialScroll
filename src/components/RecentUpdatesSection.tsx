@@ -67,12 +67,12 @@ const RecentUpdatesSection = () => {
 
   return (
     <section className="section-spacing section-container">
-      <SectionHeader 
-        title="Most Recently Updated" 
+      <SectionHeader
+        title="Most Recently Updated"
         subtitle="Fresh chapters hot off the press"
         viewAllLink="/updates"
       />
-      
+
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -86,7 +86,7 @@ const RecentUpdatesSection = () => {
             </thead>
             <tbody>
               {updates.map((update, index) => (
-                <tr 
+                <tr
                   key={update.id}
                   className="border-b border-border/50 last:border-0 hover:bg-surface-hover transition-colors cursor-pointer"
                   style={{ animationDelay: `${index * 50}ms` }}

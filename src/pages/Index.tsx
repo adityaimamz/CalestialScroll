@@ -44,11 +44,21 @@ const Index = () => {
       <HeroSection />
       <AnnouncementsSection />
       <TopSeriesSection />
-      {/* <PopularSection /> */}
-      <NewReleasesSection />
-      <GenresSection />
-      {/* <SneakPeeksSection /> */}
+
+      <div className="section-container grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+        <div className="lg:col-span-2 space-y-8">
+          <NewReleasesSection />
+          <GenresSection />
+        </div>
+
+        <div className="lg:col-span-1">
+          <PopularSection />
+        </div>
+      </div>
+
       <RecentUpdatesSection />
+
+      {/* <SneakPeeksSection /> */}
     </main>
   );
 };

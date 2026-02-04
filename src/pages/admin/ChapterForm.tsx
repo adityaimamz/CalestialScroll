@@ -106,14 +106,7 @@ export default function ChapterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title.trim()) {
-      toast({
-        title: "Error",
-        description: "Judul chapter harus diisi",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Title check removed - it's optional now
 
     setSaving(true);
 
@@ -121,7 +114,7 @@ export default function ChapterForm() {
       const chapterData = {
         novel_id: novelId,
         chapter_number: formData.chapter_number,
-        title: formData.title.trim(),
+        title: formData.title.trim(), // Can be empty string now
         content: formData.content.trim() || null,
         published_at: formData.published ? new Date().toISOString() : null,
       };
@@ -210,13 +203,12 @@ export default function ChapterForm() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="title">Judul Chapter *</Label>
+                    <Label htmlFor="title">Judul Chapter (Opsional)</Label>
                     <Input
                       id="title"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="Judul chapter"
-                      required
                     />
                   </div>
                 </div>
@@ -228,29 +220,29 @@ export default function ChapterForm() {
                       <TabsTrigger value="write">Write</TabsTrigger>
                       <TabsTrigger value="preview">Preview</TabsTrigger>
                     </TabsList>
-                    
+
                     <TabsContent value="write">
-                        <Textarea
-                            id="content"
-                            value={formData.content}
-                            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                            placeholder="Tulis isi chapter di sini (Mendukung Markdown)..."
-                            rows={20}
-                            className="font-mono"
-                        />
-                        <p className="text-xs text-muted-foreground mt-2">
-                            Mendukung format Markdown: **bold**, *italic*, # Heading, dll.
-                        </p>
+                      <Textarea
+                        id="content"
+                        value={formData.content}
+                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                        placeholder="Tulis isi chapter di sini (Mendukung Markdown)..."
+                        rows={20}
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Mendukung format Markdown: **bold**, *italic*, # Heading, dll.
+                      </p>
                     </TabsContent>
 
                     <TabsContent value="preview">
-                        <div className="border rounded-md p-4 min-h-[400px] bg-background">
-                            <article className="prose dark:prose-invert max-w-none">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {formData.content || "*Belum ada konten*"}
-                                </ReactMarkdown>
-                            </article>
-                        </div>
+                      <div className="border rounded-md p-4 min-h-[400px] bg-background">
+                        <article className="prose dark:prose-invert max-w-none">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {formData.content || "*Belum ada konten*"}
+                          </ReactMarkdown>
+                        </article>
+                      </div>
                     </TabsContent>
                   </Tabs>
                 </div>

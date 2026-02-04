@@ -1,5 +1,6 @@
-import { Star } from "lucide-react";
+import { Star, BookOpen, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
 
 interface NovelCardProps {
   title: string;
@@ -11,19 +12,57 @@ interface NovelCardProps {
   size?: "small" | "medium" | "large";
   id?: string | number;
   slug?: string;
+  lastUpdate?: string;
 }
 
-const NovelCard = ({ 
-  title, 
-  cover, 
-  rating, 
+const NovelCard = ({
+  title,
+  cover,
+  rating,
   status,
   chapters,
   genre,
   size = "medium",
   id,
-  slug
+  slug,
+  lastUpdate
 }: NovelCardProps) => {
+  // ... (previous helper objects)
+
+  const formattedTime = lastUpdate
+    ? formatDistanceToNow(new Date(lastUpdate), { addSuffix: true })
+    : "Recently";
+
+  // ...
+
+  <div className="p-2 space-y-1">
+    {chapters ? (
+      <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+        Chapter {chapters}
+      </h3>
+    ) : (
+      <h3 className="font-bold text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+        {title}
+      </h3>
+    )}
+
+    <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+      {chapters && (
+        <div className="flex items-center gap-1.5">
+          <BookOpen className="w-3 h-3 flex-shrink-0" />
+          <span className="line-clamp-1">{title}</span>
+        </div>
+      )}
+
+      {lastUpdate && (
+        <div className="flex items-center gap-1.5">
+          <Clock className="w-3 h-3 flex-shrink-0" />
+          <span>{formattedTime}</span>
+        </div>
+      )}
+    </div>
+  </div>
+  // ...
   const sizeClasses = {
     small: "w-32",
     medium: "w-40",
@@ -45,7 +84,7 @@ const NovelCard = ({
           className="novel-card-image w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
-        
+
         {/* Status Badge */}
         {status && (
           <div className="absolute top-2 left-2">
@@ -70,18 +109,34 @@ const NovelCard = ({
           </div>
         )}
 
-        {/* Chapters */}
-        {chapters && (
-          <div className="absolute bottom-2 right-2">
-            <span className="text-xs text-muted-foreground">{chapters} Ch</span>
-          </div>
-        )}
       </div>
 
-      <div className="p-2">
-        <h3 className="font-semibold text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors">
-          {title}
-        </h3>
+      <div className="p-2 space-y-1">
+        {chapters ? (
+          <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+            Chapter {chapters}
+          </h3>
+        ) : (
+          <h3 className="font-bold text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+            {title}
+          </h3>
+        )}
+
+        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+          {chapters && (
+            <div className="flex items-center gap-1.5">
+              <BookOpen className="w-3 h-3 flex-shrink-0" />
+              <span className="line-clamp-1">{title}</span>
+            </div>
+          )}
+
+          {lastUpdate && (
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3 h-3 flex-shrink-0" />
+              <span>{lastUpdate ? formatDistanceToNow(new Date(lastUpdate), { addSuffix: true }) : "Recently"}</span>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

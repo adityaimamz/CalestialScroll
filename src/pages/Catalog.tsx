@@ -185,7 +185,7 @@ const Catalog = () => {
              <Loader2 className="h-10 w-10 animate-spin text-primary" />
            </div>
         ) : novels.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-6 mt-6">
             {novels.map((novel) => (
               <NovelCard
                 key={novel.id}
