@@ -337,7 +337,7 @@ export default function Navbar() {
                     </div>
                     <Link to="/settings" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start">
-                        <User className="mr-2 h-4 w-4" />
+                        <Settings className="mr-2 h-4 w-4" />
                         Settings
                       </Button>
                     </Link>
