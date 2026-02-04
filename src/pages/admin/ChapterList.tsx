@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, ArrowLeft, Loader2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowLeft, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -39,6 +39,11 @@ interface Novel {
   slug: string;
 }
 
+type SortConfig = {
+  key: keyof Chapter;
+  direction: "asc" | "desc";
+};
+
 export default function ChapterList() {
   const { novelId } = useParams();
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -46,6 +51,7 @@ export default function ChapterList() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "chapter_number", direction: "asc" });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -115,10 +121,38 @@ export default function ChapterList() {
     }
   };
 
-  const filteredChapters = chapters.filter((chapter) =>
+  const handleSort = (key: keyof Chapter) => {
+    setSortConfig((current) => ({
+      key,
+      direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const sortedChapters = [...chapters].sort((a, b) => {
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+
+    if (aValue === bValue) return 0;
+
+    // Handle null values
+    if (aValue === null) return 1;
+    if (bValue === null) return -1;
+
+    const compareResult = aValue < bValue ? -1 : 1;
+    return sortConfig.direction === "asc" ? compareResult : -compareResult;
+  });
+
+  const filteredChapters = sortedChapters.filter((chapter) =>
     chapter.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     chapter.chapter_number.toString().includes(searchQuery)
   );
+
+  const SortIcon = ({ columnKey }: { columnKey: keyof Chapter }) => {
+    if (sortConfig.key !== columnKey) return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/30" />;
+    return sortConfig.direction === "asc" ?
+      <ArrowUp className="ml-2 h-4 w-4 text-primary" /> :
+      <ArrowDown className="ml-2 h-4 w-4 text-primary" />;
+  };
 
   if (loading) {
     return (
@@ -164,9 +198,33 @@ export default function ChapterList() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-20">No.</TableHead>
-              <TableHead>Judul</TableHead>
-              <TableHead>Tanggal Publish</TableHead>
+              <TableHead
+                className="w-20 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleSort("chapter_number")}
+              >
+                <div className="flex items-center">
+                  No.
+                  <SortIcon columnKey="chapter_number" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleSort("title")}
+              >
+                <div className="flex items-center">
+                  Judul
+                  <SortIcon columnKey="title" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleSort("published_at")}
+              >
+                <div className="flex items-center">
+                  Tanggal Publish
+                  <SortIcon columnKey="published_at" />
+                </div>
+              </TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>

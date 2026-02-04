@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Eye, FileText, Loader2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Eye, FileText, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Novel {
@@ -42,11 +42,17 @@ interface Novel {
   created_at: string;
 }
 
+type SortConfig = {
+  key: keyof Novel;
+  direction: "asc" | "desc";
+};
+
 export default function NovelList() {
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "created_at", direction: "desc" });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -102,7 +108,28 @@ export default function NovelList() {
     }
   };
 
-  const filteredNovels = novels.filter((novel) =>
+  const handleSort = (key: keyof Novel) => {
+    setSortConfig((current) => ({
+      key,
+      direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const sortedNovels = [...novels].sort((a, b) => {
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+
+    if (aValue === bValue) return 0;
+
+    // Handle null values
+    if (aValue === null) return 1;
+    if (bValue === null) return -1;
+
+    const compareResult = aValue < bValue ? -1 : 1;
+    return sortConfig.direction === "asc" ? compareResult : -compareResult;
+  });
+
+  const filteredNovels = sortedNovels.filter((novel) =>
     novel.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     novel.author?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -114,6 +141,13 @@ export default function NovelList() {
       hiatus: "outline",
     };
     return <Badge variant={variants[status] || "default"}>{status}</Badge>;
+  };
+
+  const SortIcon = ({ columnKey }: { columnKey: keyof Novel }) => {
+    if (sortConfig.key !== columnKey) return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/30" />;
+    return sortConfig.direction === "asc" ?
+      <ArrowUp className="ml-2 h-4 w-4 text-primary" /> :
+      <ArrowDown className="ml-2 h-4 w-4 text-primary" />;
   };
 
   return (
@@ -147,11 +181,43 @@ export default function NovelList() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Judul</TableHead>
-              <TableHead>Author</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleSort("title")}
+              >
+                <div className="flex items-center">
+                  Judul
+                  <SortIcon columnKey="title" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleSort("author")}
+              >
+                <div className="flex items-center">
+                  Author
+                  <SortIcon columnKey="author" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleSort("status")}
+              >
+                <div className="flex items-center">
+                  Status
+                  <SortIcon columnKey="status" />
+                </div>
+              </TableHead>
               <TableHead>Genre</TableHead>
-              <TableHead>Views</TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleSort("views")}
+              >
+                <div className="flex items-center">
+                  Views
+                  <SortIcon columnKey="views" />
+                </div>
+              </TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>

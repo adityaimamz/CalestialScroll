@@ -25,9 +25,9 @@ interface Comment {
 }
 
 const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
-  
+
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,8 +93,8 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-        toast({ title: "Login Required", description: "Please login to post a comment." });
-        return;
+      toast({ title: "Login Required", description: "Please login to post a comment." });
+      return;
     }
     if (!newComment.trim()) return;
 
@@ -125,21 +125,21 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
   };
 
   const handleDelete = async (commentId: string) => {
-      if (!confirm("Are you sure you want to delete this comment?")) return;
-      try {
+    if (!confirm("Are you sure you want to delete this comment?")) return;
+    try {
 
-          const { error } = await supabase.from("comments" as any).delete().eq("id", commentId);
-          if (error) throw error;
-          
-          setComments(prev => prev.filter(c => c.id !== commentId));
-          toast({ title: "Deleted", description: "Comment deleted." });
-      } catch (error) {
-           toast({
-            title: "Error",
-            description: "Failed to delete comment.",
-            variant: "destructive",
-          });
-      }
+      const { error } = await supabase.from("comments" as any).delete().eq("id", commentId);
+      if (error) throw error;
+
+      setComments(prev => prev.filter(c => c.id !== commentId));
+      toast({ title: "Deleted", description: "Comment deleted." });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete comment.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -149,8 +149,8 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
       {/* Input Section */}
       {user ? (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Textarea 
-            placeholder="Write a comment..." 
+          <Textarea
+            placeholder="Write a comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             className="min-h-[100px] bg-card border-border placeholder:text-muted-foreground"
@@ -184,10 +184,10 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
               <Avatar className="w-10 h-10 border border-border">
                 <AvatarImage src={comment.profile?.avatar_url || ""} />
                 <AvatarFallback>
-                    <UserIcon className="w-5 h-5 text-muted-foreground" />
+                  <UserIcon className="w-5 h-5 text-muted-foreground" />
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-sm text-foreground">
@@ -200,17 +200,17 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
                 <p className="text-foreground/90 whitespace-pre-wrap text-sm leading-relaxed">
                   {comment.content}
                 </p>
-                
-                {user && user.id === comment.user_id && (
-                     <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-destructive hover:text-destructive hover:bg-destructive/10 -ml-2 mt-2"
-                        onClick={() => handleDelete(comment.id)}
-                     >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Delete
-                     </Button>
+
+                {user && (user.id === comment.user_id || isAdmin) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-destructive hover:text-destructive hover:bg-destructive/10 -ml-2 mt-2"
+                    onClick={() => handleDelete(comment.id)}
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    Delete
+                  </Button>
                 )}
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ const GenresList = () => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGenre, setEditingGenre] = useState<Genre | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   // Form states
@@ -52,7 +53,7 @@ const GenresList = () => {
         .from("genres")
         .select("*")
         .order("name");
-      
+
       if (error) throw error;
       setGenres(data || []);
     } catch (error: any) {
@@ -140,6 +141,10 @@ const GenresList = () => {
     }
   };
 
+  const filteredGenres = genres.filter((genre) =>
+    genre.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -147,6 +152,17 @@ const GenresList = () => {
         <Button onClick={() => handleOpenDialog()}>
           <Plus className="mr-2 h-4 w-4" /> Add Genre
         </Button>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search genres..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -208,14 +224,14 @@ const GenresList = () => {
                   Loading...
                 </TableCell>
               </TableRow>
-            ) : genres.length === 0 ? (
+            ) : filteredGenres.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8">
-                  No genres found
+                  {searchQuery ? "No genres found matching your search" : "No genres found"}
                 </TableCell>
               </TableRow>
             ) : (
-              genres.map((genre) => (
+              filteredGenres.map((genre) => (
                 <TableRow key={genre.id}>
                   <TableCell className="font-medium">{genre.name}</TableCell>
                   <TableCell>{genre.slug}</TableCell>
