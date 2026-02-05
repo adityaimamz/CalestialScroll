@@ -3,23 +3,16 @@ import { useEffect, useState } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useScrollHideNav } from "@/hooks/useScrollHideNav";
 
 const ScrollButtons = () => {
     const [showTopBtn, setShowTopBtn] = useState(false);
     const [showBottomBtn, setShowBottomBtn] = useState(true);
-    const [isVisible, setIsVisible] = useState(true);
-    const [lastScrollY, setLastScrollY] = useState(0);
+    const isVisible = useScrollHideNav();
 
     useEffect(() => {
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
-
-            if (currentScrollY > lastScrollY && currentScrollY > 100) {
-                setIsVisible(false);
-            } else {
-                setIsVisible(true);
-            }
-            setLastScrollY(currentScrollY);
 
             // Show "Scroll to Top" if scrolled down more than 300px
             if (currentScrollY > 300) {
@@ -32,7 +25,6 @@ const ScrollButtons = () => {
             const windowHeight = window.innerHeight;
             const documentHeight = document.documentElement.scrollHeight;
 
-            // If we are close to the bottom (within 100px), hide the bottom button
             if (windowHeight + currentScrollY >= documentHeight - 100) {
                 setShowBottomBtn(false);
             } else {
@@ -40,14 +32,9 @@ const ScrollButtons = () => {
             }
         };
 
-        window.addEventListener("scroll", handleScroll);
-        // Initial check
-        handleScroll();
-
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
-    }, [lastScrollY]);
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
     const scrollToTop = () => {
         window.scrollTo({
