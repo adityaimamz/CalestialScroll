@@ -33,7 +33,7 @@ export default function ChapterForm() {
     chapter_number: 1,
     title: "",
     content: "",
-    published: false,
+    published: true,
   });
 
   useEffect(() => {
