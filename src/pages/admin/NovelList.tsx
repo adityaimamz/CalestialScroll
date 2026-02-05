@@ -312,26 +312,38 @@ export default function NovelList() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link to={`/series/${novel.slug}`}>
+                        <Link
+                          to={`/series/${novel.slug}`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Eye className="mr-2 h-4 w-4" />
                           Lihat
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to={`/admin/novels/${novel.id}/edit`}>
+                        <Link
+                          to={`/admin/novels/${novel.id}/edit`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to={`/admin/novels/${novel.id}/chapters`}>
+                        <Link
+                          to={`/admin/novels/${novel.id}/chapters`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <FileText className="mr-2 h-4 w-4" />
                           Chapters
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive"
-                        onClick={() => setDeleteId(novel.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteId(novel.id);
+                        }}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Hapus

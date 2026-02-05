@@ -353,7 +353,7 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
         />
       ) : (
         <div className="bg-muted/30 p-4 rounded-lg text-center text-muted-foreground">
-          Please <a href="/auth" className="text-primary hover:underline">login</a> to leave a comment.
+          Please <a href="/login" className="text-primary hover:underline">login</a> to leave a comment.
         </div>
       )}
 
