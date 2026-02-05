@@ -45,7 +45,7 @@ const Rankings = () => {
     return (
         <div className='bg-background text-foreground flex flex-col'>
             {/* Header */}
-            <div className=' pt-16 pb-32 mb-8'>
+            <div className=' pt-16 pb-24 mb-8'>
                 <div className='container mx-auto px-4'>
                     <div className="flex flex-col md:flex-row md:items-center justify-center text-center md:text-left gap-4">
                         <div>
@@ -53,7 +53,7 @@ const Rankings = () => {
                                 <Trophy className="w-8 h-8 lg:w-10 lg:h-10 text-yellow-500" />
                                 Most Popular Series
                             </h1>
-                            <p className="text-muted-foreground mt-2 text-lg">The most read novels on Celestial Scrolls</p>
+                            <p className="text-muted-foreground mt-2 flex items-center justify-center text-lg">The most read novels on Celestial Scrolls</p>
                         </div>
                     </div>
                 </div>
