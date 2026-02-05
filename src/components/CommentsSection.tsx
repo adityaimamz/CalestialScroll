@@ -260,7 +260,7 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
         .select("*")
         .eq("user_id", user.id)
         .eq("comment_id", commentId)
-        .maybeSingle(); 
+        .maybeSingle();
       if (queryError) throw queryError;
 
       const existingVote = data as unknown as (CommentVote & { id: string }) | null;
@@ -294,7 +294,11 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
 
   const handleReport = async (commentId: string) => {
     if (!user) {
-      toast({ title: "Login Required" });
+      toast({
+        title: "Login Required",
+        description: "You need to be logged in to report a comment.",
+        variant: "destructive",
+      });
       return;
     }
     setReportingCommentId(commentId);
@@ -499,11 +503,9 @@ const CommentItem = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {currentUserId && (
-                  <DropdownMenuItem onClick={() => onReport(comment.id)}>
-                    <Flag className="w-4 h-4 mr-2" /> Report
-                  </DropdownMenuItem>
-                )}
+                <DropdownMenuItem onClick={() => onReport(comment.id)}>
+                  <Flag className="w-4 h-4 mr-2" /> Report
+                </DropdownMenuItem>
                 {(currentUserId === comment.user_id || isAdmin) && (
                   <DropdownMenuItem onClick={() => onDelete(comment.id)} className="text-destructive">
                     <Trash2 className="w-4 h-4 mr-2" /> Delete
