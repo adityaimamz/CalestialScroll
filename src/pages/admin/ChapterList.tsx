@@ -51,7 +51,7 @@ export default function ChapterList() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "chapter_number", direction: "asc" });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "chapter_number", direction: "desc" });
   const { toast } = useToast();
 
   useEffect(() => {
