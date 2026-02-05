@@ -196,9 +196,6 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
       return;
     }
 
-    // Check rate limit (Client side check, basic) needs server side enforcement really but good for UX
-    // Assuming backend handles the harsh limits as per migration.
-
     try {
       const { error } = await supabase.from("comments" as any).insert({
         user_id: user.id,
@@ -224,15 +221,28 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
     }
   };
 
-  const handleDelete = async (commentId: string) => {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+
+  const handleDelete = (commentId: string) => {
+    setCommentToDelete(commentId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!commentToDelete) return;
+
     try {
-      const { error } = await supabase.from("comments" as any).delete().eq("id", commentId);
+      const { error } = await supabase.from("comments" as any).delete().eq("id", commentToDelete);
       if (error) throw error;
       toast({ title: "Deleted", description: "Comment deleted." });
       fetchComments();
     } catch (error) {
       toast({ title: "Error", description: "Failed to delete comment.", variant: "destructive" });
+    } finally {
+      setIsDeleteModalOpen(false);
+      setCommentToDelete(null);
     }
   };
 
@@ -243,8 +253,6 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
     }
 
     try {
-      // Optimistic update could happen here, but for simplicity relying on refetch or just assuming success for now until full flux.
-      // Actually, let's just do the DB call.
 
       // Check if vote exists
       const { data, error: queryError } = await supabase
@@ -252,11 +260,9 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
         .select("*")
         .eq("user_id", user.id)
         .eq("comment_id", commentId)
-        .maybeSingle(); // Use maybeSingle instead of single to handle no rows gracefully without error code check if preferred, but keeping logic similar to before
-
+        .maybeSingle(); 
       if (queryError) throw queryError;
 
-      // Cast data manually since we are using 'as any' on the table
       const existingVote = data as unknown as (CommentVote & { id: string }) | null;
 
       if (existingVote) {
@@ -325,6 +331,12 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
         isOpen={isReportModalOpen}
         onOpenChange={setIsReportModalOpen}
         onSubmit={submitReport}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        onConfirm={executeDelete}
       />
 
       <h3 className="text-xl font-semibold">Comments ({comments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0)})</h3>
@@ -441,7 +453,7 @@ const CommentItem = ({
   isAdmin?: boolean;
   onReply: (content: string, parentId: string) => Promise<boolean>;
   onVote: (commentId: string, type: 1 | -1) => Promise<void>;
-  onDelete: (commentId: string) => Promise<void>;
+  onDelete: (commentId: string) => void;
   onReport: (commentId: string) => Promise<void>;
   onUserClick: (userId: string) => void;
 }) => {
@@ -622,6 +634,46 @@ const ReportModal = ({
           <Button onClick={handleSubmit} disabled={!reason.trim() || isSubmitting}>
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Submit Report
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const DeleteConfirmModal = ({
+  isOpen,
+  onOpenChange,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => Promise<void>;
+}) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirm = async () => {
+    setIsDeleting(true);
+    await onConfirm();
+    setIsDeleting(false);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Delete Comment</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this comment? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isDeleting}>
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={handleConfirm} disabled={isDeleting}>
+            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            Delete
           </Button>
         </DialogFooter>
       </DialogContent>
