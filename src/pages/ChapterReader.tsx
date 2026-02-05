@@ -23,7 +23,7 @@ const ChapterReader = () => {
   const { id: novelSlug, chapterId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [novel, setNovel] = useState<Novel | null>(null);
   const [chapter, setChapter] = useState<Chapter | null>(null);
@@ -65,6 +65,18 @@ const ChapterReader = () => {
         navigate("/series");
         return;
       }
+
+      // Check access for unpublished novels
+      if (!novelData.is_published && !isAdmin) {
+        toast({
+          title: "Unavailable",
+          description: "This novel is not published.",
+          variant: "destructive"
+        });
+        navigate("/series");
+        return;
+      }
+
       setNovel(novelData);
 
       // 2. Fetch Chapters List (Lightweight, just id, title, number)

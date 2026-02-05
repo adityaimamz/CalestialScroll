@@ -60,7 +60,8 @@ const Catalog = () => {
     try {
       let query = supabase
         .from("novels")
-        .select("*, chapters(count)");
+        .select("*, chapters(count)")
+        .eq("is_published", true);
 
       // Search
       if (searchQuery) {

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, MouseEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,7 @@ interface Novel {
   genres: string[];
   views: number;
   created_at: string;
+  is_published: boolean;
 }
 
 type SortConfig = {
@@ -54,6 +55,7 @@ export default function NovelList() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "created_at", direction: "desc" });
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchNovels();
@@ -105,6 +107,34 @@ export default function NovelList() {
       });
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const handlePublishToggle = async (id: string, currentStatus: boolean, e: MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from("novels")
+        .update({ is_published: !currentStatus })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setNovels(novels.map(n =>
+        n.id === id ? { ...n, is_published: !currentStatus } : n
+      ));
+
+      toast({
+        title: !currentStatus ? "Novel Dipublikasikan" : "Novel Disembunyikan",
+        description: `Novel berhasil ${!currentStatus ? "dipublikasikan" : "disembunyikan dari publik"}.`,
+      });
+    } catch (error) {
+      console.error("Error updating publish status:", error);
+      toast({
+        title: "Error",
+        description: "Gagal mengubah status publikasi",
+        variant: "destructive",
+      });
     }
   };
 
@@ -218,6 +248,7 @@ export default function NovelList() {
                   <SortIcon columnKey="views" />
                 </div>
               </TableHead>
+              <TableHead>Publikasi</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
@@ -239,7 +270,11 @@ export default function NovelList() {
             )}
 
             {!loading && filteredNovels.length > 0 && filteredNovels.map((novel) => (
-              <TableRow key={novel.id}>
+              <TableRow
+                key={novel.id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => navigate(`/admin/novels/${novel.id}/edit`)}
+              >
                 <TableCell className="font-medium">{novel.title}</TableCell>
                 <TableCell>{novel.author || "-"}</TableCell>
                 <TableCell>{getStatusBadge(novel.status)}</TableCell>
@@ -258,9 +293,19 @@ export default function NovelList() {
                   </div>
                 </TableCell>
                 <TableCell>{novel.views.toLocaleString()}</TableCell>
+                <TableCell>
+                  <Button
+                    variant={novel.is_published ? "default" : "secondary"}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={(e) => handlePublishToggle(novel.id, novel.is_published, e)}
+                  >
+                    {novel.is_published ? "Published" : "Draft"}
+                  </Button>
+                </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="icon">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>

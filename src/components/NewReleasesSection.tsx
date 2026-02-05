@@ -23,6 +23,7 @@ const NewReleasesSection = () => {
         .from("novels")
         .select("*, chapters(count)")
         .order("created_at", { ascending: false })
+        .eq("is_published", true)
         .limit(6);
 
       if (error) throw error;

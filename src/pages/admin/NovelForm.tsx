@@ -12,10 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, X, Plus, Pencil, Trash2, FileText } from "lucide-react";
+import { Loader2, ArrowLeft, X, Plus, Pencil, Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -51,6 +52,7 @@ interface NovelFormData {
   status: string;
   genres: string[]; // Stores genre IDs
   cover_url: string;
+  is_published: boolean;
 }
 
 interface Chapter {
@@ -60,6 +62,11 @@ interface Chapter {
   published_at: string | null;
   created_at: string;
 }
+
+type SortConfig = {
+  key: keyof Chapter;
+  direction: "asc" | "desc";
+};
 
 export default function NovelForm() {
   const { id } = useParams();
@@ -77,6 +84,7 @@ export default function NovelForm() {
     status: "ongoing",
     genres: [],
     cover_url: "",
+    is_published: false,
   });
 
   // Chapter Management State
@@ -84,6 +92,7 @@ export default function NovelForm() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loadingChapters, setLoadingChapters] = useState(false);
   const [deleteChapterId, setDeleteChapterId] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "chapter_number", direction: "asc" });
 
   useEffect(() => {
     fetchGenres();
@@ -134,6 +143,7 @@ export default function NovelForm() {
         status: novelData.status,
         genres: linkedGenreIds,
         cover_url: novelData.cover_url || "",
+        is_published: novelData.is_published || false,
       });
     } catch (error) {
       console.error("Error fetching novel:", error);
@@ -230,6 +240,7 @@ export default function NovelForm() {
         status: formData.status,
         genres: genreNames, // Save names cache
         cover_url: formData.cover_url.trim() || null,
+        is_published: formData.is_published,
       };
 
       let novelId = id;
@@ -259,7 +270,7 @@ export default function NovelForm() {
           .from("novel_genres")
           .delete()
           .eq("novel_id", novelId);
-        
+
         if (deleteError) throw deleteError;
 
         // Then insert new
@@ -268,11 +279,11 @@ export default function NovelForm() {
             novel_id: novelId,
             genre_id: genreId
           }));
-          
+
           const { error: insertError } = await supabase
             .from("novel_genres")
             .insert(novelGenres);
-            
+
           if (insertError) throw insertError;
         }
       }
@@ -321,6 +332,34 @@ export default function NovelForm() {
     } finally {
       setDeleteChapterId(null);
     }
+  };
+
+  const handleSort = (key: keyof Chapter) => {
+    setSortConfig((current) => ({
+      key,
+      direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const sortedChapters = [...chapters].sort((a, b) => {
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+
+    if (aValue === bValue) return 0;
+
+    // Handle null values
+    if (aValue === null) return 1;
+    if (bValue === null) return -1;
+
+    const compareResult = aValue < bValue ? -1 : 1;
+    return sortConfig.direction === "asc" ? compareResult : -compareResult;
+  });
+
+  const SortIcon = ({ columnKey }: { columnKey: keyof Chapter }) => {
+    if (sortConfig.key !== columnKey) return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/30" />;
+    return sortConfig.direction === "asc" ?
+      <ArrowUp className="ml-2 h-4 w-4 text-primary" /> :
+      <ArrowDown className="ml-2 h-4 w-4 text-primary" />;
   };
 
   if (loading) {
@@ -486,6 +525,20 @@ export default function NovelForm() {
                         </div>
                       )}
                     </div>
+
+                    <div className="flex items-center justify-between space-x-2 border rounded-lg p-4 bg-muted/20">
+                      <Label htmlFor="is_published" className="flex flex-col space-y-1 cursor-pointer">
+                        <span>Publikasikan</span>
+                        <span className="font-normal text-xs text-muted-foreground">
+                          Tampil di web
+                        </span>
+                      </Label>
+                      <Switch
+                        id="is_published"
+                        checked={formData.is_published}
+                        onCheckedChange={(checked) => setFormData({ ...formData, is_published: checked })}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -523,15 +576,39 @@ export default function NovelForm() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-20">No.</TableHead>
-                    <TableHead>Judul</TableHead>
-                    <TableHead>Tanggal Publish</TableHead>
+                    <TableHead
+                      className="w-20 cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort("chapter_number")}
+                    >
+                      <div className="flex items-center">
+                        No.
+                        <SortIcon columnKey="chapter_number" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort("title")}
+                    >
+                      <div className="flex items-center">
+                        Judul
+                        <SortIcon columnKey="title" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort("published_at")}
+                    >
+                      <div className="flex items-center">
+                        Tanggal Publish
+                        <SortIcon columnKey="published_at" />
+                      </div>
+                    </TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loadingChapters ? (
-                     <TableRow>
+                    <TableRow>
                       <TableCell colSpan={4} className="text-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                       </TableCell>
@@ -543,7 +620,7 @@ export default function NovelForm() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    chapters.map((chapter) => (
+                    sortedChapters.map((chapter) => (
                       <TableRow key={chapter.id}>
                         <TableCell className="font-medium">{chapter.chapter_number}</TableCell>
                         <TableCell>{chapter.title}</TableCell>

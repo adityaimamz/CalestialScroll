@@ -60,6 +60,7 @@ export type Database = {
           description: string | null
           genres: string[] | null
           id: string
+          is_published: boolean
           rating: number | null
           slug: string
           status: string
@@ -74,6 +75,7 @@ export type Database = {
           description?: string | null
           genres?: string[] | null
           id?: string
+          is_published?: boolean
           rating?: number | null
           slug: string
           status?: string
@@ -88,6 +90,7 @@ export type Database = {
           description?: string | null
           genres?: string[] | null
           id?: string
+          is_published?: boolean
           rating?: number | null
           slug?: string
           status?: string

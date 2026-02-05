@@ -24,6 +24,7 @@ const Rankings = () => {
                 .from("novels")
                 .select("*, chapters(count)")
                 .order("views", { ascending: false })
+                .eq("is_published", true)
                 .limit(50); // Fetch top 50
 
             if (error) throw error;

@@ -62,11 +62,12 @@ const GenresSection = () => {
         const { data, error } = await supabase
           .from("novel_genres")
           .select(`
-            novel:novels (
+            novel:novels!inner (
               *,
               chapters (count)
             )
           `)
+          .eq("novel.is_published", true)
           .eq("genre_id", activeGenre)
           .limit(8);
 

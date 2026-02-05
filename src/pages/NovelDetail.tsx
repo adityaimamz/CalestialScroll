@@ -22,7 +22,7 @@ const NovelDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [novel, setNovel] = useState<Novel | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -38,10 +38,11 @@ const NovelDetail = () => {
   const [bookmarkCount, setBookmarkCount] = useState(0);
 
   useEffect(() => {
-    if (id) {
+    if (id && loading !== undefined) {
       fetchNovelAndChapters(id);
     }
-  }, [id]);
+  }, [id, isAdmin]); 
+
 
   useEffect(() => {
     if (novel?.id && user) {
@@ -71,7 +72,19 @@ const NovelDetail = () => {
         return;
       }
 
-      // Optimistically update views locally
+      // Check access for unpublished novels
+      if (!novelData.is_published && !isAdmin) {
+        toast({
+          title: "Unavailable",
+          description: "This novel is not currently published.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        // Effectively clear novel if it was somehow set
+        setNovel(null);
+        return;
+      }
+
       setNovel({ ...novelData, views: novelData.views + 1 });
 
       // Increment Views in DB
@@ -182,8 +195,6 @@ const NovelDetail = () => {
       setUserRating(value);
       toast({ title: "Rated", description: `You rated this novel ${value} stars.` });
 
-      // Optionally refetch novel to update average rating instantly, or let the trigger handle it eventually?
-      // The trigger updates the `novels` table, but we need to re-fetch `novel` state to see standard changes.
       const { data } = await supabase.from("novels").select("rating").eq("id", novel.id).single();
       if (data) setNovel(prev => prev ? ({ ...prev, rating: data.rating }) : null);
 
@@ -250,6 +261,7 @@ const NovelDetail = () => {
       });
     }
   };
+
 
   if (loading) {
     return (
@@ -339,6 +351,9 @@ const NovelDetail = () => {
               <Clock className="w-4 h-4" />
               <span className="capitalize">{novel.status}</span>
             </div>
+            {!novel.is_published && (
+              <Badge variant="destructive" className="ml-2">Draft</Badge>
+            )}
             <div className="flex items-center gap-1 text-muted-foreground">
               {/* Views could be implemented later if we track them per page load */}
               <span className="text-sm">({novel.views} views)</span>
@@ -366,8 +381,8 @@ const NovelDetail = () => {
               size="lg"
               variant="outline"
               className={`gap-2 border-0 shadow-sm ${isFavorite
-                  ? "bg-white text-destructive border border-destructive hover:bg-destructive/10"
-                  : "bg-white text-primary hover:bg-white/90"
+                ? "bg-white text-destructive border border-destructive hover:bg-destructive/10"
+                : "bg-white text-primary hover:bg-white/90"
                 }`}
               onClick={toggleBookmark}
             >

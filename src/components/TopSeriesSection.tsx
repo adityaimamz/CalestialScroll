@@ -37,6 +37,7 @@ const TopSeriesSection = () => {
         .from("novels")
         .select("*")
         .order("rating", { ascending: false })
+        .eq("is_published", true)
         .limit(6); // Increased limit slightly since it's scrollable
 
       if (error) throw error;

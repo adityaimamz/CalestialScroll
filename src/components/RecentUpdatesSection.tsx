@@ -36,12 +36,14 @@ const RecentUpdatesSection = () => {
           chapter_number,
           published_at,
           novel_id,
-          novels (
+          novels!inner (
             title,
             author,
-            slug
+            slug,
+            is_published
           )
         `)
+        .eq("novels.is_published", true)
         .not("published_at", "is", null)
         .order("published_at", { ascending: false })
         .limit(8);

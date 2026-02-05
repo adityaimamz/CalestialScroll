@@ -40,7 +40,7 @@ const RecentlyReadSection = () => {
             read_at,
             chapter_id,
             novel_id,
-            novels (
+            novels!inner (
               title,
               cover_url,
               slug
@@ -50,6 +50,7 @@ const RecentlyReadSection = () => {
               title
             )
           `)
+                    .eq("novels.is_published", true)
                     .eq("user_id", user.id)
                     .order("read_at", { ascending: false })
                     .limit(1)
