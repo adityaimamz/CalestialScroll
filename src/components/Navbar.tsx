@@ -307,7 +307,7 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border animate-fade-in">
             <div className="flex flex-col gap-1">
-              {navLinks.map((link) => {
+              {/* {navLinks.map((link) => {
                 const Icon = link.icon;
                 return (
                   <Link
@@ -320,9 +320,9 @@ export default function Navbar() {
                     {link.label}
                   </Link>
                 );
-              })}
+              })} */}
 
-              <div className="mt-4 px-4 border-t border-border pt-4">
+              <div className="px-4">
                 {user ? (
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3 px-2 py-2 mb-2">
