@@ -1,14 +1,23 @@
 
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useScrollHideNav } from "@/hooks/useScrollHideNav";
 
-const ScrollButtons = () => {
+interface ScrollButtonsProps {
+    customVisibility?: boolean;
+}
+
+const ScrollButtons = ({ customVisibility }: ScrollButtonsProps) => {
+    const location = useLocation();
     const [showTopBtn, setShowTopBtn] = useState(false);
     const [showBottomBtn, setShowBottomBtn] = useState(true);
-    const isVisible = useScrollHideNav();
+    const scrollHideNav = useScrollHideNav();
+
+    const isReaderPage = location.pathname.includes("/chapter/");
+    const isVisible = customVisibility !== undefined ? customVisibility : scrollHideNav;
 
     useEffect(() => {
         const handleScroll = () => {
@@ -49,6 +58,10 @@ const ScrollButtons = () => {
             behavior: "smooth",
         });
     };
+
+    if (isReaderPage && customVisibility === undefined) {
+        return null;
+    }
 
     return (
         <div className={cn(

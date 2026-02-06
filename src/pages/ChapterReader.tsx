@@ -13,7 +13,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useAuth } from "@/components/auth/AuthProvider";
 import CommentsSection from "@/components/CommentsSection";
-import { useScrollHideNav } from "@/hooks/useScrollHideNav";
+import ScrollButtons from "@/components/ScrollButtons";
+
 
 type Chapter = Tables<"chapters">;
 type Novel = Tables<"novels">;
@@ -34,8 +35,7 @@ const ChapterReader = () => {
   const [fontSize, setFontSize] = useState(18);
   const [fontFamily, setFontFamily] = useState("sans");
   const [theme, setTheme] = useState<'light' | 'sepia' | 'dark'>("dark");
-  // showControls is now derived from useScrollHideNav hook
-  // lastScrollY is handled inside the hook
+
 
   // Fetch data
   useEffect(() => {
@@ -142,7 +142,13 @@ const ChapterReader = () => {
     }
   };
 
-  const showControls = useScrollHideNav();
+  const [showControls, setShowControls] = useState(true);
+
+  const handleToggleControls = () => {
+    if (!window.getSelection()?.toString()) {
+      setShowControls((prev) => !prev);
+    }
+  };
 
   const toggleTheme = (newTheme: 'light' | 'sepia' | 'dark') => {
     setTheme(newTheme);
@@ -196,9 +202,13 @@ const ChapterReader = () => {
   if (!chapter) return null;
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${getThemeColors()}`}>
+    <div
+      className={`min-h-screen transition-colors duration-300 ${getThemeColors()}`}
+      onClick={handleToggleControls}
+    >
       {/* Top Navigation */}
       <div
+        onClick={(e) => e.stopPropagation()}
         className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${showControls ? "translate-y-0" : "-translate-y-full"
           } ${theme === 'dark' ? "bg-background/95 border-b border-border" : "bg-white/95 border-b border-slate-200"} backdrop-blur-sm`}
       >
@@ -284,6 +294,7 @@ const ChapterReader = () => {
 
       {/* Bottom Navigation */}
       <div
+        onClick={(e) => e.stopPropagation()}
         className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ${showControls ? "translate-y-0" : "translate-y-full"
           } ${theme === 'dark' ? "bg-background/95 border-t border-border" : "bg-white/95 border-t border-slate-200"} backdrop-blur-sm`}
       >
@@ -314,6 +325,7 @@ const ChapterReader = () => {
           </Button>
         </div>
       </div>
+      <ScrollButtons customVisibility={showControls} />
     </div>
   );
 };
