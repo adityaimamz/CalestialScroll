@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -12,6 +11,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { BarLoader } from "@/components/ui/BarLoader";
 
 type Novel = Tables<"novels"> & {
   chapters_count?: number;
@@ -54,7 +54,7 @@ const HeroSection = () => {
   if (loading) {
     return (
       <section className="relative min-h-[500px] md:min-h-[600px] flex items-center justify-center bg-muted/20">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <BarLoader />
       </section>
     );
   }
@@ -83,24 +83,24 @@ const HeroSection = () => {
                     (e.target as HTMLImageElement).src = heroBanner;
                   }}
                 />
-                
+
                 {/* Texture Overlay (Dot Pattern) */}
-                <div 
+                <div
                   className="absolute inset-0 opacity-20"
-                  style={{ 
+                  style={{
                     backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px)",
                     backgroundSize: "24px 24px"
-                  }} 
+                  }}
                 />
 
                 <div
                   className="absolute inset-0"
                   style={{ background: "var(--gradient-hero)" }}
                 />
-                 <div 
+                <div
                   className="absolute inset-0"
-                  style={{ 
-                    background: "linear-gradient(to top, hsl(var(--background)) 5%, transparent 50%), linear-gradient(to right, hsl(var(--background)) 10%, transparent 60%)" 
+                  style={{
+                    background: "linear-gradient(to top, hsl(var(--background)) 5%, transparent 50%), linear-gradient(to right, hsl(var(--background)) 10%, transparent 60%)"
                   }}
                 />
               </div>
@@ -141,8 +141,8 @@ const HeroSection = () => {
         </CarouselContent>
         {/* Navigation Buttons - Visible on desktop / hover */}
         <div className="hidden md:block opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-           <CarouselPrevious className="left-4 bg-background/20 hover:bg-background/40 border-none text-white h-12 w-12" />
-           <CarouselNext className="right-4 bg-background/20 hover:bg-background/40 border-none text-white h-12 w-12" />
+          <CarouselPrevious className="left-4 bg-background/20 hover:bg-background/40 border-none text-white h-12 w-12" />
+          <CarouselNext className="right-4 bg-background/20 hover:bg-background/40 border-none text-white h-12 w-12" />
         </div>
       </Carousel>
     </section>

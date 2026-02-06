@@ -18,7 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Loader2 } from "lucide-react";
+import { Search } from "lucide-react";
+import { BarLoader } from "@/components/ui/BarLoader";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -170,7 +171,7 @@ export default function UserList() {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  <BarLoader className="justify-center" />
                 </TableCell>
               </TableRow>
             ) : null}

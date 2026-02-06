@@ -21,7 +21,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, ArrowLeft, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowLeft, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { BarLoader } from "@/components/ui/BarLoader";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -157,7 +158,7 @@ export default function ChapterList() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <BarLoader />
       </div>
     );
   }

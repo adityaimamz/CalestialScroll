@@ -3,7 +3,8 @@ import NovelCard from "@/components/NovelCard";
 import SectionHeader from "@/components/SectionHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { Loader2 } from "lucide-react";
+
+import { BarLoader } from "@/components/ui/BarLoader";
 
 type Genre = Tables<"genres">;
 type Novel = Tables<"novels"> & {
@@ -116,7 +117,7 @@ const GenresSection = () => {
       {/* Genre Novels Grid */}
       {novelsLoading ? (
         <div className="h-64 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <BarLoader />
         </div>
       ) : novels.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in">

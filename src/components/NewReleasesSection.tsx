@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { BarLoader } from "@/components/ui/BarLoader";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import NovelCard from "@/components/NovelCard";
@@ -45,7 +45,7 @@ const NewReleasesSection = () => {
   if (loading) {
     return (
       <section className="section-spacing section-container flex justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <BarLoader />
       </section>
     );
   }

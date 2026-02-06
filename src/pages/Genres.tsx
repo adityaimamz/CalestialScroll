@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
 import { HoverEffect } from "@/components/ui/card-hover-effect";
+import { BarLoader } from "@/components/ui/BarLoader";
 
 interface Genre {
   id: string;
@@ -41,8 +41,8 @@ const Genres = () => {
 
   if (isLoading) {
     return (
-      <div className="container py-10 flex justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background flex justify-center items-center">
+        <BarLoader />
       </div>
     );
   }

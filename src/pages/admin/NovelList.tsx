@@ -28,7 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Eye, FileText, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Eye, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { BarLoader } from "@/components/ui/BarLoader";
 import { useToast } from "@/hooks/use-toast";
 
 interface Novel {
@@ -256,7 +257,7 @@ export default function NovelList() {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  <BarLoader className="justify-center" />
                 </TableCell>
               </TableRow>
             ) : null}

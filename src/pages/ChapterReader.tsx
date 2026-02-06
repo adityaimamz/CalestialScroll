@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Home, ArrowLeft, List, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, ArrowLeft, List } from "lucide-react";
+import { BarLoader } from "@/components/ui/BarLoader";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ReaderSettings from "@/components/ReaderSettings";
@@ -187,7 +188,7 @@ const ChapterReader = () => {
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${getThemeColors()}`}>
-        <Loader2 className="h-10 w-10 animate-spin" />
+        <BarLoader />
       </div>
     );
   }

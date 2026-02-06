@@ -10,7 +10,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash2, CheckCircle } from "lucide-react";
+import { Trash2, CheckCircle } from "lucide-react";
+import { BarLoader } from "@/components/ui/BarLoader";
 import { formatDistanceToNow } from "date-fns";
 import {
     Dialog,
@@ -192,7 +193,7 @@ const CommentReports = () => {
                         {loading ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center py-8">
-                                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+                                    <BarLoader className="justify-center" />
                                 </TableCell>
                             </TableRow>
                         ) : null}

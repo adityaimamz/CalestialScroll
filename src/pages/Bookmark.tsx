@@ -12,7 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, ChevronDown, ArrowUp, ArrowDown, Bookmark as BookmarkIcon } from "lucide-react";
+import { ChevronDown, ArrowUp, ArrowDown, Bookmark as BookmarkIcon } from "lucide-react";
+import { BarLoader } from "@/components/ui/BarLoader";
 import { Link } from "react-router-dom";
 
 // Defines the shape of data we get from the join
@@ -183,7 +184,7 @@ const Bookmark = () => {
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <BarLoader />
           </div>
         ) : bookmarks.length > 0 ? (
           <>

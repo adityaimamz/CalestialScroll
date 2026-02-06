@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Star, BookOpen, Clock, Tag, ChevronLeft, List, Info, PlayCircle, Loader2, Search, ArrowUp, ArrowDown } from "lucide-react";
+import { Star, BookOpen, Clock, Tag, ChevronLeft, List, Info, PlayCircle, Search, ArrowUp, ArrowDown } from "lucide-react";
+import { BarLoader } from "@/components/ui/BarLoader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -285,7 +286,7 @@ const NovelDetail = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex justify-center items-center">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <BarLoader />
       </div>
     );
   }

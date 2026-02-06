@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
-import { Clock, Loader2 } from "lucide-react";
+import { Clock } from "lucide-react";
+import { BarLoader } from "@/components/ui/BarLoader";
 import { supabase } from "@/integrations/supabase/client";
 import SectionHeader from "@/components/SectionHeader";
 
@@ -60,7 +61,7 @@ const RecentUpdatesSection = () => {
   if (loading) {
     return (
       <section className="section-spacing section-container flex justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <BarLoader />
       </section>
     );
   }
