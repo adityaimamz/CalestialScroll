@@ -12,30 +12,58 @@ interface UserBadgeProps {
 const UserBadge = ({ chapterCount, size = "sm", className = "" }: UserBadgeProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const tier = getBadgeInfo(chapterCount);
+    const { style } = tier;
 
-    // Dynamic Custom Style for coloring and glow
-    const style: React.CSSProperties = {
-        backgroundColor: `${tier.color}20`, // 20% opacity
-        color: tier.color,
-        border: `1px solid ${tier.color}20`,
-        boxShadow: tier.glow ? `0 0 8px ${tier.color}60` : "none",
-        textShadow: tier.glow ? `0 0 4px ${tier.color}40` : "none",
+    // Style khusus untuk Tier Tertinggi (Rainbow/God)
+    const isGodTier = style.glow === "rainbow";
+
+    const badgeStyle: React.CSSProperties = {
+        background: style.background,
+        color: style.color,
+        borderColor: isGodTier ? "transparent" : style.border,
+        borderWidth: "1px",
+        borderStyle: "solid",
+        // Logic Glow:
+        boxShadow: isGodTier 
+            ? "0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255,255,255,0.8)" 
+            : style.glow 
+                ? `0 0 8px ${style.glow}80, inset 0 0 4px rgba(255,255,255,0.2)` 
+                : "none",
+        textShadow: style.textShadow || "none",
         cursor: "pointer",
+        position: "relative",
+        zIndex: 1,
     };
+
+    // Class tambahan untuk teks gradient pada tier God
+    const godTierTextClass = isGodTier 
+        ? "bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-red-500 to-purple-600 font-extrabold animate-pulse" 
+        : "";
+
+    // Class tambahan untuk border pelangi pada tier God
+    const godTierContainerClass = isGodTier
+        ? "before:absolute before:inset-0 before:-z-10 before:p-[1px] before:bg-gradient-to-r before:from-red-500 before:via-green-500 before:to-blue-500 before:rounded-md before:content-[''] before:m-[-1px]"
+        : "";
 
     return (
         <>
             <Badge
-                variant="secondary" // Changed from outline to secondary for filled look base
-                className={`hover:brightness-110 transition-all active:scale-95 select-none ${className} ${size === "sm" ? "text-[10px] px-2 h-5 rounded-md" : "text-xs px-2.5 py-0.5 rounded-md"
-                    }`}
-                style={style}
+                variant="outline" // Base variant
+                className={`
+                    hover:scale-105 transition-all active:scale-95 select-none 
+                    ${className} 
+                    ${size === "sm" ? "text-[10px] px-3 h-5 rounded-md" : "text-xs px-3 py-1 rounded-md"}
+                    ${godTierContainerClass}
+                `}
+                style={badgeStyle}
                 onClick={(e) => {
                     e.stopPropagation();
                     setIsOpen(true);
                 }}
             >
-                {tier.name}
+                <span className={godTierTextClass}>
+                    {tier.name}
+                </span>
             </Badge>
 
             <BadgeListModal

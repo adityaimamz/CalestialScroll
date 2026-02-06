@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { BADGE_TIERS } from "@/lib/badgeSystem";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Lock, Check } from "lucide-react";
+import { Lock, Check, Crown } from "lucide-react"; 
 
 interface BadgeListModalProps {
     isOpen: boolean;
@@ -16,91 +16,102 @@ interface BadgeListModalProps {
 }
 
 const BadgeListModal = ({ isOpen, onOpenChange, currentCount }: BadgeListModalProps) => {
-    const currentTierIndex = BADGE_TIERS.findIndex(
-        (tier, index) =>
-            currentCount >= tier.minChapters &&
-            (index === BADGE_TIERS.length - 1 || currentCount < BADGE_TIERS[index + 1].minChapters)
-    );
-
+    const currentTierIndex = BADGE_TIERS.filter(tier => currentCount >= tier.minChapters).length - 1;
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col overflow-hidden">
+            <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900">
                 <DialogHeader>
-                    <DialogTitle>Cultivation Rank</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Crown className="w-5 h-5 text-yellow-500" /> 
+                        Cultivation Realm
+                    </DialogTitle>
                     <DialogDescription>
-                        Read chapters to advance your cultivation realm!
+                        Read chapters to ascend the heavens!
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="py-4 space-y-2 shrink-0">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total Chapters Read</span>
-                        <span className="font-bold font-mono">{currentCount}</span>
+                    <div className="flex justify-between items-center p-3 bg-muted rounded-lg border">
+                        <span className="text-muted-foreground text-sm">Your Achievement</span>
+                        <span className="font-bold font-mono text-lg text-primary">{currentCount} Chapters</span>
                     </div>
                 </div>
 
                 <ScrollArea className="h-[60vh] pr-4 -mr-4">
-                    <div className="space-y-4 pb-4 px-1">
+                    <div className="space-y-3 pb-4 px-1">
                         {BADGE_TIERS.map((tier, index) => {
-                            const isUnlocked = currentCount >= tier.minChapters;
+                            const isUnlocked = index <= currentTierIndex;
                             const isCurrent = index === currentTierIndex;
+                            const isGod = tier.style.glow === "rainbow";
 
-                            let tierClass = "bg-muted/20 border-border/30 opacity-40 grayscale";
-                            if (isCurrent) {
-                                tierClass = "bg-accent/20 border-primary shadow-[0_0_10px_rgba(var(--primary),0.3)]";
-                            } else if (isUnlocked) {
-                                tierClass = "bg-card/50 border-border/50 opacity-70";
+                            // Logic styling container list
+                            let containerStyle: React.CSSProperties = {};
+                            let containerClass = "relative p-3 rounded-lg border flex items-center gap-4 transition-all ";
+
+                            if (isUnlocked) {
+                                containerClass += "opacity-100 ";
+                                containerStyle = {
+                                    background: isCurrent 
+                                        ? "linear-gradient(to right, rgba(255,255,255,0.05), rgba(0,0,0,0.02))" 
+                                        : "transparent",
+                                    borderColor: isCurrent ? tier.style.border : "transparent",
+                                    boxShadow: isCurrent && tier.style.glow 
+                                        ? `inset 0 0 20px ${typeof tier.style.glow === 'string' && tier.style.glow !== 'rainbow' ? tier.style.glow + '20' : '#FFD70020'}` 
+                                        : "none"
+                                };
+                                if(isCurrent) containerClass += "bg-accent/10 border-l-4";
+                            } else {
+                                containerClass += "opacity-50 grayscale bg-muted/30 border-transparent";
                             }
 
                             return (
                                 <div
                                     key={tier.name}
-                                    className={`relative p-3 rounded-lg border flex items-center gap-4 transition-all ${tierClass}`}
+                                    className={containerClass}
+                                    style={containerStyle}
                                 >
-                                    {/* Status Icon */}
+                                    {/* Icon Status */}
                                     <div className="shrink-0">
                                         {isUnlocked ? (
-                                            <Check className={`w-5 h-5 ${isCurrent ? "text-primary" : "text-muted-foreground"}`} />
+                                            <div className={`rounded-full p-1 ${isCurrent ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                                <Check className="w-3 h-3" />
+                                            </div>
                                         ) : (
-                                            <Lock className="w-5 h-5 text-muted-foreground" />
+                                            <Lock className="w-4 h-4 text-muted-foreground/50" />
                                         )}
                                     </div>
 
-                                    {/* Badge Info */}
+                                    {/* Badge Preview Content */}
                                     <div className="flex-1">
                                         <div className="flex justify-between items-center mb-1">
-                                            <div className="flex flex-col gap-1.5">
-                                                <span
-                                                    className="font-bold text-sm"
-                                                    style={{ color: isUnlocked ? tier.color : undefined }}
-                                                >
-                                                    {tier.name}
-                                                </span>
-                                                {/* Badge Preview */}
+                                            <div className="flex flex-col items-start gap-2">
+                                                {/* BADGE PREVIEW MINIATUR */}
                                                 <div
-                                                    className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border w-fit"
+                                                    className="inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-bold border shadow-sm"
                                                     style={{
-                                                        backgroundColor: `${tier.color}20`,
-                                                        borderColor: `${tier.color}20`,
-                                                        color: tier.color,
-                                                        boxShadow: tier.glow ? `0 0 6px ${tier.color}40` : "none",
-                                                        textShadow: tier.glow ? `0 0 4px ${tier.color}40` : "none",
+                                                        background: tier.style.background,
+                                                        color: tier.style.color,
+                                                        borderColor: isGod ? 'transparent' : tier.style.border,
+                                                        boxShadow: tier.style.glow && tier.style.glow !== 'rainbow' 
+                                                            ? `0 0 5px ${tier.style.glow}60` 
+                                                            : 'none',
+                                                        textShadow: tier.style.textShadow || 'none'
                                                     }}
                                                 >
                                                     {tier.name}
                                                 </div>
                                             </div>
 
-                                            <span className="text-xs text-muted-foreground font-mono">
-                                                {tier.minChapters}+ Ch
+                                            <span className="text-xs font-mono font-medium text-muted-foreground">
+                                                {tier.minChapters}+
                                             </span>
                                         </div>
-
-                                        {/* Glow effect for high tiers card background */}
-                                        {tier.glow && isUnlocked && (
-                                            <div className="absolute inset-0 rounded-lg pointer-events-none"
-                                                style={{ boxShadow: `inset 0 0 15px ${tier.color}10` }}
-                                            />
+                                        
+                                        {/* Progress Bar Visual (Optional) */}
+                                        {isCurrent && (
+                                            <p className="text-[10px] text-muted-foreground mt-1">
+                                                Current Rank
+                                            </p>
                                         )}
                                     </div>
                                 </div>
