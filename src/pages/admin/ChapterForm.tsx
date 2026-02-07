@@ -9,9 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { BarLoader } from "@/components/ui/BarLoader";
 
 interface ChapterFormData {
@@ -30,6 +30,8 @@ export default function ChapterForm() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [novelTitle, setNovelTitle] = useState("");
+  const [prevChapterId, setPrevChapterId] = useState<string | null>(null);
+  const [nextChapterId, setNextChapterId] = useState<string | null>(null);
   const [formData, setFormData] = useState<ChapterFormData>({
     chapter_number: 1,
     title: "",
@@ -91,6 +93,8 @@ export default function ChapterForm() {
         content: data.content || "",
         published: !!data.published_at,
       });
+
+      fetchAdjacentChapters(data.chapter_number);
     } catch (error) {
       console.error("Error fetching chapter:", error);
       toast({
@@ -101,6 +105,36 @@ export default function ChapterForm() {
       navigate(`/admin/novels/${novelId}/chapters`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAdjacentChapters = async (currentNumber: number) => {
+    try {
+      // Prev
+      const { data: prevData } = await supabase
+        .from("chapters")
+        .select("id")
+        .eq("novel_id", novelId)
+        .lt("chapter_number", currentNumber)
+        .order("chapter_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      setPrevChapterId(prevData?.id || null);
+
+      // Next
+      const { data: nextData } = await supabase
+        .from("chapters")
+        .select("id")
+        .eq("novel_id", novelId)
+        .gt("chapter_number", currentNumber)
+        .order("chapter_number", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      setNextChapterId(nextData?.id || null);
+    } catch (error) {
+      console.error("Error fetching adjacent chapters:", error);
     }
   };
 
@@ -165,18 +199,43 @@ export default function ChapterForm() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to={`/admin/novels/${novelId}/chapters`}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">
-            {isEditing ? "Edit Chapter" : "Tambah Chapter Baru"}
-          </h2>
-          <p className="text-muted-foreground">Novel: {novelTitle}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link to={`/admin/novels/${novelId}/chapters`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h2 className="text-3xl font-bold text-foreground">
+              {isEditing ? "Edit Chapter" : "Tambah Chapter Baru"}
+            </h2>
+            <p className="text-muted-foreground">Novel: {novelTitle}</p>
+          </div>
         </div>
+
+        {isEditing && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={!prevChapterId}
+              onClick={() => navigate(`/admin/novels/${novelId}/chapters/${prevChapterId}/edit`)}
+              title="Chapter Sebelumnya"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={!nextChapterId}
+              onClick={() => navigate(`/admin/novels/${novelId}/chapters/${nextChapterId}/edit`)}
+              title="Chapter Selanjutnya"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -254,7 +313,7 @@ export default function ChapterForm() {
                                   title: "Format Terdeteksi",
                                   description: `Judul otomatis diisi: ${realTitle}`,
                                 });
-                                return; 
+                                return;
                               }
                             }
                           }
