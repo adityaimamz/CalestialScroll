@@ -78,7 +78,7 @@ export default function ChapterList() {
         .from("chapters")
         .select("*")
         .eq("novel_id", novelId)
-        .order("chapter_number", { ascending: true });
+        .order("chapter_number", { ascending: false });
 
       if (chaptersError) throw chaptersError;
       setChapters(chaptersData || []);
