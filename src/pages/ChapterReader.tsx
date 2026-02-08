@@ -42,10 +42,10 @@ const ChapterReader = () => {
     if (novelSlug && chapterId) {
       if (!novel) {
         // Initial load: Fetch Novel & All Chapters list (for sidebar/navigation)
-        fetchNovelAndAllChapters(novelSlug, parseInt(chapterId));
+        fetchNovelAndAllChapters(novelSlug, parseFloat(chapterId));
       } else {
         // Novel already loaded, just fetch specific chapter content if we changed chapters
-        fetchChapterContent(novel.id, parseInt(chapterId));
+        fetchChapterContent(novel.id, parseFloat(chapterId));
       }
     }
   }, [novelSlug, chapterId]);
@@ -188,19 +188,24 @@ const ChapterReader = () => {
     }
   };
 
-  const currentChapterNum = parseInt(chapterId || "1");
-  const hasNext = chaptersList.some(c => c.chapter_number === currentChapterNum + 1);
-  const hasPrev = chaptersList.some(c => c.chapter_number === currentChapterNum - 1);
+  const currentChapterNum = parseFloat(chapterId || "1");
+
+  const currentIndex = chaptersList.findIndex(c => c.chapter_number === currentChapterNum);
+  const nextChapter = currentIndex >= 0 && currentIndex < chaptersList.length - 1 ? chaptersList[currentIndex + 1] : null;
+  const prevChapter = currentIndex > 0 ? chaptersList[currentIndex - 1] : null;
+
+  const hasNext = !!nextChapter;
+  const hasPrev = !!prevChapter;
 
   const handleNext = () => {
-    if (hasNext) {
-      navigate(`/series/${novelSlug}/chapter/${currentChapterNum + 1}`);
+    if (nextChapter) {
+      navigate(`/series/${novelSlug}/chapter/${nextChapter.chapter_number}`);
     }
   };
 
   const handlePrev = () => {
-    if (hasPrev) {
-      navigate(`/series/${novelSlug}/chapter/${currentChapterNum - 1}`);
+    if (prevChapter) {
+      navigate(`/series/${novelSlug}/chapter/${prevChapter.chapter_number}`);
     }
   };
 

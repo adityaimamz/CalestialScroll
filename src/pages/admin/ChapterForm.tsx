@@ -253,10 +253,11 @@ export default function ChapterForm() {
                     <Input
                       id="chapter_number"
                       type="number"
-                      min={1}
+                      step="any"
+                      min={0}
                       value={formData.chapter_number}
                       onChange={(e) =>
-                        setFormData({ ...formData, chapter_number: parseInt(e.target.value) || 1 })
+                        setFormData({ ...formData, chapter_number: parseFloat(e.target.value) || 0 })
                       }
                       required
                     />
@@ -292,10 +293,10 @@ export default function ChapterForm() {
                             const firstLine = lines[0].trim();
                             const cleanLine = firstLine.replace(/^[\*\#\s]+|[\*\#\s]+$/g, '');
 
-                            const match = cleanLine.match(/^(?:chapter|bab)\s+(\d+)\s*[:\-\.]\s*(.+)$/i);
+                            const match = cleanLine.match(/^(?:chapter|bab)\s+(\d+(?:\.\d+)?)\s*[:\-\.]\s*(.+)$/i);
 
                             if (match) {
-                              const chapterNum = parseInt(match[1]);
+                              const chapterNum = parseFloat(match[1]);
                               const realTitle = match[2];
 
                               // Avoid infinite loop / unnecessary updates

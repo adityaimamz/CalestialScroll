@@ -245,7 +245,7 @@ const NovelDetail = () => {
 
       if (isNumber) {
         // Exact match for chapter number
-        const num = parseInt(query);
+        const num = parseFloat(query);
         filtered = filtered.filter(ch => ch.chapter_number === num);
       } else {
         // Fuzzy match for title
