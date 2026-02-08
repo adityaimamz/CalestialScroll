@@ -438,7 +438,7 @@ const ChapterReader = () => {
             Prev
           </Button>
 
-          <span className="text-sm font-medium text-muted-foreground">
+          <span className="text-sm font-medium text-muted-foreground cursor-pointer" onClick={() => setIsTocOpen(true)}>
             {/* Find index of current chapter in the list to show position */}
             {chaptersList.findIndex(c => c.chapter_number === currentChapterNum) + 1} / {chaptersList.length}
           </span>
