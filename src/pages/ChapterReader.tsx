@@ -355,13 +355,13 @@ const ChapterReader = () => {
       </div>
 
       {/* Content Area */}
-      <main className="max-w-3xl mx-auto px-6 py-24 md:py-32">
+      <main className="max-w-3xl mx-auto px-4 md:px-6 py-20 md:py-32 overflow-hidden">
         <h1 className="text-2xl md:text-3xl font-bold mb-8 text-center">
           {chapter.title}
         </h1>
         <article
-          className={`prose max-w-none ${fontFamily === 'serif' ? 'font-serif' : 'font-sans'} ${theme === 'dark' ? 'prose-invert' : ''}`}
-          style={{ fontSize: `${fontSize}px` }}
+          className={`prose max-w-none break-words ${fontFamily === 'serif' ? 'font-serif' : 'font-sans'} ${theme === 'dark' ? 'prose-invert' : ''}`}
+          style={{ fontSize: `${fontSize}px`, overflowWrap: 'break-word', wordBreak: 'break-word' }}
         >
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -373,46 +373,46 @@ const ChapterReader = () => {
           </ReactMarkdown>
         </article>
 
-              {/* Report Button Area */}
-      <div className="max-w-3xl mx-auto px-6 mt-16 flex justify-center">
-        <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
-          <DialogTrigger asChild>
-            <Button variant="ghost" className="text-muted-foreground hover:text-destructive gap-2 text-sm">
-              <Flag className="h-4 w-4" />
-              Ada terjemahan yang salah? Laporkan
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Lapor Kesalahan Terjemahan</DialogTitle>
-              <DialogDescription>
-                Bantu kami memperbaiki kualitas terjemahan dengan melaporkan kesalahan yang Anda temukan.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="reason">Detail Kesalahan</Label>
-                <Textarea
-                  id="reason"
-                  placeholder="Contoh: Pada paragraf ke-3, kata 'Apple' seharusnya diterjemahkan menjadi 'Apel', bukan 'Jeruk'."
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value)}
-                  rows={4}
-                />
+        {/* Report Button Area */}
+        <div className="mt-16 flex justify-center">
+          <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" className="text-muted-foreground hover:text-destructive gap-2 text-sm">
+                <Flag className="h-4 w-4" />
+                Ada terjemahan yang salah? Laporkan
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Lapor Kesalahan Terjemahan</DialogTitle>
+                <DialogDescription>
+                  Bantu kami memperbaiki kualitas terjemahan dengan melaporkan kesalahan yang Anda temukan.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reason">Detail Kesalahan</Label>
+                  <Textarea
+                    id="reason"
+                    placeholder="Contoh: Pada paragraf ke-3, kata 'Apple' seharusnya diterjemahkan menjadi 'Apel', bukan 'Jeruk'."
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    rows={4}
+                  />
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsReportOpen(false)}>
-                Batal
-              </Button>
-              <Button onClick={handleReportSubmit} disabled={isSubmittingReport}>
-                {isSubmittingReport && <BarLoader className="mr-2" />}
-                Kirim Laporan
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsReportOpen(false)}>
+                  Batal
+                </Button>
+                <Button onClick={handleReportSubmit} disabled={isSubmittingReport}>
+                  {isSubmittingReport && <BarLoader className="mr-2" />}
+                  Kirim Laporan
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         <div className="mt-16 pt-8 border-t border-border">
           {novel && <CommentsSection novelId={novel.id} chapterId={chapter.id} />}
