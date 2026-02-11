@@ -127,25 +127,26 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
         return;
       }
 
-      // 1b. Fetch ALL replies for these root comments
-      // This is a simplification. Ideally we'd fetch replies recursively or on demand.
-      // For now, we fetch all comments that are children of these roots.
+      // 1b. Fetch ALL replies for these root comments (Recursive/Iterative)
       const rootIds = rawRootComments.map(c => c.id);
       let allRelatedComments = [...rawRootComments];
+      let parentIdsToFetch = [...rootIds];
 
-      if (rootIds.length > 0) {
-        // Recursive fetch isn't easy in one query.
-        // Let's just fetch direct children for now, or fetch all comments for this novel/chapter 
-        // and filter locally is what we did before, but that defeats pagination purpose.
-        // BETTER APPROACH: Fetch replies only for the loaded root IDs.
-        const { data: repliesData } = await supabase
-          .from("comments" as any)
-          .select("*")
-          .in("parent_id", rootIds)
-          .order("created_at", { ascending: true }); // Replies generally old to new
+      // Fetch up to 10 levels of replies to ensure nested comments appear
+      if (parentIdsToFetch.length > 0) {
+        for (let i = 0; i < 10 && parentIdsToFetch.length > 0; i++) {
+          const { data: repliesData } = await supabase
+            .from("comments" as any)
+            .select("*")
+            .in("parent_id", parentIdsToFetch)
+            .order("created_at", { ascending: true });
 
-        if (repliesData) {
+          if (!repliesData || repliesData.length === 0) {
+            break;
+          }
+
           allRelatedComments = [...allRelatedComments, ...repliesData];
+          parentIdsToFetch = repliesData.map(r => r.id);
         }
       }
 
