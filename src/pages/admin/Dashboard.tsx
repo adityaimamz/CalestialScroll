@@ -64,11 +64,12 @@ export default function Dashboard() {
       const { count: chapterCount } = await supabase.from("chapters").select("*", { count: "exact", head: true });
       const { count: userCount } = await supabase.from("profiles").select("*", { count: "exact", head: true });
 
-      const { data: novels } = await supabase
-        .from("novels")
-        .select("views")
-        .neq("id", "00000000-0000-0000-0000-000000000000");
-      const totalViews = novels?.reduce((acc, curr) => acc + (curr.views || 0), 0) || 0;
+      const { data: chapters } = await supabase
+        .from("chapters")
+        .select("views");
+
+      // Cast to any because views column might not be in types yet
+      const totalViews = chapters?.reduce((acc, curr: any) => acc + (curr.views || 0), 0) || 0;
 
       setStats({
         totalNovels: novelCount || 0,
@@ -86,10 +87,11 @@ export default function Dashboard() {
       const endDate = new Date();
       const startDate = subDays(endDate, 6); // Last 7 days
 
-      const { data: history } = await supabase
-        .from("reading_history")
-        .select("read_at")
-        .gte("read_at", startOfDay(startDate).toISOString());
+      const { data: stats } = await supabase
+        .from("daily_site_views" as any)
+        .select("date, views")
+        .gte("date", format(startDate, "yyyy-MM-dd"))
+        .lte("date", format(endDate, "yyyy-MM-dd"));
 
       // Initialize last 7 days with 0 views
       const dailyViews = new Map<string, number>();
@@ -99,13 +101,12 @@ export default function Dashboard() {
         dailyViews.set(dateStr, 0);
       }
 
-      // Count actual views
-      history?.forEach((entry) => {
-        const dateStr = format(new Date(entry.read_at), "yyyy-MM-dd");
-        if (dailyViews.has(dateStr)) {
-          dailyViews.set(dateStr, (dailyViews.get(dateStr) || 0) + 1);
-        }
-      });
+      // Fill with actual data
+      if (stats) {
+        stats.forEach((entry: any) => {
+          dailyViews.set(entry.date, entry.views);
+        });
+      }
 
       // Convert to array and sort by date ascending
       const chartDataArray = Array.from(dailyViews.entries())

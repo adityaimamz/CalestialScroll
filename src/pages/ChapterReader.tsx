@@ -128,6 +128,10 @@ const ChapterReader = () => {
         // Scroll to top on new chapter
         window.scrollTo(0, 0);
 
+        // Increment Chapter Views
+        const { error: viewError } = await supabase.rpc('increment_chapter_views' as any, { _chapter_id: data.id });
+        if (viewError) console.error("Failed to increment views:", viewError);
+
         // Record reading history if user is logged in
         if (user) {
           recordReadHistory(novelId, data.id);

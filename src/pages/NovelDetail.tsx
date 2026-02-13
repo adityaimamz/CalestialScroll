@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Star, BookOpen, Clock, Tag, ChevronLeft, List, Info, PlayCircle, Search, ArrowUp, ArrowDown } from "lucide-react";
+import { Star, BookOpen, Clock, Tag, ChevronLeft, List, Info, PlayCircle, Search, ArrowUp, ArrowDown, Eye } from "lucide-react";
 import { BarLoader } from "@/components/ui/BarLoader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import CommentsSection from "@/components/CommentsSection";
 
 type Novel = Tables<"novels">;
-type Chapter = Tables<"chapters">;
+type Chapter = Tables<"chapters"> & { views: number };
 type ReadingHistory = Tables<"reading_history">;
 
 const NovelDetail = () => {
@@ -104,12 +104,12 @@ const NovelDetail = () => {
       // 2. Fetch Chapters using novel_id
       const { data: chaptersData, error: chaptersError } = await supabase
         .from("chapters")
-        .select("*")
+        .select("*, views")
         .eq("novel_id", novelData.id)
         .order("chapter_number", { ascending: false });
 
       if (chaptersError) throw chaptersError;
-      setChapters(chaptersData || []);
+      setChapters((chaptersData as unknown as Chapter[]) || []);
 
     } catch (error) {
       console.error("Error fetching novel details:", error);
@@ -478,9 +478,16 @@ const NovelDetail = () => {
                         <h4 className={`font-medium group-hover:text-primary transition-colors ${readChapterIds.has(chapter.id) ? "text-purple-500" : ""}`}>
                           Chapter {chapter.chapter_number}: {chapter.title}
                         </h4>
-                        <span className="text-xs text-muted-foreground">
-                          {chapter.published_at ? formatDistanceToNow(new Date(chapter.published_at), { addSuffix: true }) : "Draft"}
-                        </span>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                          <span>
+                            {chapter.published_at ? formatDistanceToNow(new Date(chapter.published_at), { addSuffix: true }) : "Draft"}
+                          </span>
+                          <span>•</span>
+                          <span className="inline-flex items-center gap-1">
+                            <Eye className="w-3 h-3" />
+                            {chapter.views || 0}
+                          </span>
+                        </div>
                       </div>
                       <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                         Read
