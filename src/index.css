@@ -244,4 +244,17 @@
       background-position: -200% 0;
     }
   }
+
+  .animate-god-glow {
+    animation: god-glow-pulse var(--god-glow-speed, 4s) ease-in-out infinite;
+  }
+
+  @keyframes god-glow-pulse {
+    0%, 100% {
+      filter: brightness(1) drop-shadow(0 0 2px rgba(255,215,0,0.3));
+    }
+    50% {
+      filter: brightness(1.15) drop-shadow(0 0 8px rgba(255,215,0,0.6));
+    }
+  }
 }
