@@ -1,128 +1,121 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
-import { BarLoader } from "@/components/ui/BarLoader";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { MessageSquare, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
-interface Activity {
+interface RecentComment {
     id: string;
     content: string;
     created_at: string;
     user_id: string;
     novel_id: string;
     chapter_id: string | null;
-    author?: {
+    chapter_number?: number | null;
+    novel_title?: string;
+    novel_slug?: string;
+    user_profile?: {
         username: string | null;
-        avatar_url?: string | null;
+        avatar_url: string | null;
     };
-    novel?: {
-        title: string;
-        slug: string;
-    };
-    chapter?: {
-        title: string;
-        chapter_number: number;
-    } | null;
 }
 
-const Activity = () => {
-    const [activities, setActivities] = useState<Activity[]>([]);
+interface RecentUser {
+    id: string;
+    username: string | null;
+    avatar_url: string | null;
+    created_at: string;
+}
+
+export default function Activity() {
+    const [comments, setComments] = useState<RecentComment[]>([]);
+    const [users, setUsers] = useState<RecentUser[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
     useEffect(() => {
-        fetchActivities();
+        fetchActivity();
     }, []);
 
-    const fetchActivities = async () => {
+    const fetchActivity = async () => {
         setLoading(true);
         try {
-            // Fetch latest comments
+            // Fetch recent comments without joins
             const { data: commentsData, error: commentsError } = await supabase
-                .from("comments" as any)
-                .select("*")
+                .from("comments")
+                .select("id, content, created_at, user_id, novel_id, chapter_id")
                 .order("created_at", { ascending: false })
-                .limit(50); // Limit to last 50 activities for performance
+                .limit(20);
 
             if (commentsError) throw commentsError;
 
-            if (!commentsData || commentsData.length === 0) {
-                setActivities([]);
-                setLoading(false);
-                return;
-            }
+            // Get unique user IDs and novel IDs
+            const userIds = [...new Set(commentsData.map(c => c.user_id))];
+            const novelIds = [...new Set(commentsData.map(c => c.novel_id))];
 
-            // Collect IDs for batch fetching
-            const userIds = [...new Set(commentsData.map((c: any) => c.user_id))];
-            const novelIds = [...new Set(commentsData.map((c: any) => c.novel_id))];
-            const chapterIds = [...new Set(commentsData.map((c: any) => c.chapter_id).filter(Boolean))];
-
-            // 1. Fetch Profiles
+            // Fetch profiles separately
             const { data: profilesData } = await supabase
-                .from("profiles" as any)
+                .from("profiles")
                 .select("id, username, avatar_url")
                 .in("id", userIds);
 
-            const profilesMap: Record<string, any> = {};
-            profilesData?.forEach((p: any) => {
-                profilesMap[p.id] = p;
-            });
-
-            // 2. Fetch Novels
+            // Fetch novels separately
             const { data: novelsData } = await supabase
                 .from("novels")
                 .select("id, title, slug")
                 .in("id", novelIds);
 
-            const novelsMap: Record<string, any> = {};
-            novelsData?.forEach((n: any) => {
-                novelsMap[n.id] = n;
-            });
+            // Create lookup maps
+            const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+            const novelsMap = new Map(novelsData?.map(n => [n.id, n]) || []);
 
-            // 3. Fetch Chapters (if any)
-            let chaptersMap: Record<string, any> = {};
+            // Get unique chapter IDs (filter out nulls)
+            const chapterIds = [...new Set(commentsData.filter(c => c.chapter_id).map(c => c.chapter_id))];
+
+            // Fetch chapters separately to get chapter_number
+            let chaptersMap = new Map();
             if (chapterIds.length > 0) {
                 const { data: chaptersData } = await supabase
                     .from("chapters")
-                    .select("id, title, chapter_number")
+                    .select("id, chapter_number")
                     .in("id", chapterIds);
-
-                chaptersData?.forEach((c: any) => {
-                    chaptersMap[c.id] = c;
-                });
+                chaptersMap = new Map(chaptersData?.map(ch => [ch.id, ch]) || []);
             }
 
-            // Assemble Data
-            const fullActivities = commentsData.map((c: any) => {
-                const author = profilesMap[c.user_id];
-                const novel = novelsMap[c.novel_id];
-                const chapter = c.chapter_id ? chaptersMap[c.chapter_id] : null;
+            // Combine data
+            const formattedComments = commentsData.map((c: any) => ({
+                id: c.id,
+                content: c.content,
+                created_at: c.created_at,
+                user_id: c.user_id,
+                novel_id: c.novel_id,
+                chapter_id: c.chapter_id,
+                chapter_number: c.chapter_id ? chaptersMap.get(c.chapter_id)?.chapter_number : null,
+                novel_title: novelsMap.get(c.novel_id)?.title,
+                novel_slug: novelsMap.get(c.novel_id)?.slug,
+                user_profile: profilesMap.get(c.user_id),
+            }));
 
-                return {
-                    ...c,
-                    author,
-                    novel,
-                    chapter,
-                };
-            });
+            // Fetch recent joined users
+            const { data: usersData, error: usersError } = await supabase
+                .from("profiles")
+                .select("id, username, avatar_url, created_at")
+                .order("created_at", { ascending: false })
+                .limit(10);
 
-            setActivities(fullActivities);
+            if (usersError) throw usersError;
+
+            setComments(formattedComments);
+            setUsers(usersData || []);
         } catch (error) {
             console.error("Error fetching activity:", error);
             toast({
                 title: "Error",
-                description: "Failed to load recent activity.",
+                description: "Gagal memuat aktivitas",
                 variant: "destructive",
             });
         } finally {
@@ -132,92 +125,110 @@ const Activity = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <h2 className="text-3xl font-bold tracking-tight">Recent Activity (Comments)</h2>
-                <Button onClick={fetchActivities} variant="outline" size="sm">
-                    Refresh
-                </Button>
+            <div>
+                <h2 className="text-3xl font-bold text-foreground">User Activity</h2>
+                <p className="text-muted-foreground">Pantau aktivitas terbaru pengguna</p>
             </div>
 
-            <div className="rounded-md border overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>User</TableHead>
-                            <TableHead className="w-[40%]">Comment</TableHead>
-                            <TableHead>Location</TableHead>
-                            <TableHead>Time</TableHead>
-                            <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-8">
-                                    <BarLoader className="justify-center" />
-                                </TableCell>
-                            </TableRow>
-                        ) : null}
+            <div className="grid gap-6 md:grid-cols-2">
+                {/* Recent Comments */}
+                <Card className="col-span-1">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <MessageSquare className="h-5 w-5" />
+                            Komentar Terbaru
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ScrollArea className="h-[500px] pr-4">
+                            <div className="space-y-6">
+                                {comments.length === 0 ? (
+                                    <p className="text-center text-muted-foreground py-8">Belum ada komentar</p>
+                                ) : (
+                                    comments.map((comment) => {
+                                        // Use slug instead of novel_id for URL
+                                        const novelSlug = comment.novel_slug || comment.novel_id;
+                                        const commentUrl = comment.chapter_number
+                                            ? `/series/${novelSlug}/chapter/${comment.chapter_number}`
+                                            : `/series/${novelSlug}`;
 
-                        {!loading && activities.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                    No recent activity found.
-                                </TableCell>
-                            </TableRow>
-                        )}
+                                        return (
+                                            <Link
+                                                key={comment.id}
+                                                to={commentUrl}
+                                                className="flex gap-4 hover:bg-muted/50 p-2 rounded-lg transition-colors cursor-pointer"
+                                            >
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={comment.user_profile?.avatar_url || ""} />
+                                                    <AvatarFallback>
+                                                        <User className="h-4 w-4" />
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-sm font-medium leading-none">
+                                                            {comment.user_profile?.username || "Anonymous"}
+                                                        </p>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            • {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-foreground/90 line-clamp-2">
+                                                        {comment.content}
+                                                    </p>
+                                                    {comment.novel_title && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            di <span className="font-medium text-primary">{comment.novel_title}</span>
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </Link>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
 
-                        {!loading && activities.length > 0 && (
-                            activities.map((activity) => (
-                                <TableRow key={activity.id}>
-                                    <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2">
-                                            {/* Avatar could go here if available */}
-                                            <span>{activity.author?.username || "Unknown"}</span>
+                {/* Recent Users */}
+                <Card className="col-span-1">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <User className="h-5 w-5" />
+                            Pengguna Baru
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ScrollArea className="h-[500px] pr-4">
+                            <div className="space-y-4">
+                                {users.length === 0 ? (
+                                    <p className="text-center text-muted-foreground py-8">Belum ada pengguna</p>
+                                ) : (
+                                    users.map((user) => (
+                                        <div key={user.id} className="flex items-center gap-4">
+                                            <Avatar className="h-10 w-10">
+                                                <AvatarImage src={user.avatar_url || ""} />
+                                                <AvatarFallback>
+                                                    <User className="h-5 w-5" />
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-medium leading-none">
+                                                    {user.username || "Anonymous"}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Bergabung {formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </TableCell>
-                                    <TableCell className="whitespace-pre-wrap text-sm">
-                                        <div className="line-clamp-2" title={activity.content}>
-                                            {activity.content}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col text-sm">
-                                            <span className="font-medium">{activity.novel?.title || "Unknown Novel"}</span>
-                                            {activity.chapter && (
-                                                <span className="text-muted-foreground text-xs">
-                                                    Chapter {activity.chapter.chapter_number}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                                        {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {activity.novel && (
-                                            <Button variant="ghost" size="icon" asChild title="View Context">
-                                                <Link
-                                                    to={
-                                                        activity.chapter
-                                                            ? `/series/${activity.novel.slug}/chapter/${activity.chapter.chapter_number}`
-                                                            : `/series/${activity.novel.slug}`
-                                                    }
-                                                    target="_blank"
-                                                >
-                                                    <ExternalLink className="h-4 w-4" />
-                                                </Link>
-                                            </Button>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                                    ))
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
-};
-
-export default Activity;
+}

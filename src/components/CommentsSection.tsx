@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { BarLoader } from "@/components/ui/BarLoader";
+import { logAdminAction } from "@/services/adminLogger";
 
 interface CommentsSectionProps {
   novelId: string;
@@ -337,6 +338,11 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
     try {
       const { error } = await supabase.from("comments" as any).delete().eq("id", commentToDelete);
       if (error) throw error;
+
+      await logAdminAction("DELETE", "COMMENT", commentToDelete, {
+        action: "DELETE_COMMENT"
+      });
+
       toast({ title: "Deleted", description: "Comment deleted." });
       fetchComments(0);
     } catch (error) {

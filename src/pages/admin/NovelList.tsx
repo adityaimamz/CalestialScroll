@@ -31,6 +31,8 @@ import {
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Eye, FileText, ArrowUpDown, ArrowUp, ArrowDown, Pin, PinOff } from "lucide-react";
 import { BarLoader } from "@/components/ui/BarLoader";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { logAdminAction } from "@/services/adminLogger";
 
 interface Novel {
   id: string;
@@ -42,13 +44,15 @@ interface Novel {
   views: number;
   created_at: string;
   is_published: boolean;
-  pinned: boolean; 
+  pinned: boolean;
 }
 
 type SortConfig = {
   key: keyof Novel;
   direction: "asc" | "desc";
 };
+
+
 
 export default function NovelList() {
   const [novels, setNovels] = useState<Novel[]>([]);
@@ -62,6 +66,8 @@ export default function NovelList() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const ITEMS_PER_PAGE = 10;
+
+  const { userRole } = useAuth();
 
   useEffect(() => {
     // Debounce search
@@ -83,6 +89,11 @@ export default function NovelList() {
       if (error) throw error;
 
       setNovels(novels.filter((n) => n.id !== deleteId));
+
+      await logAdminAction("DELETE", "NOVEL", deleteId, {
+        novel_id: deleteId
+      });
+
       toast({
         title: "Berhasil",
         description: "Novel berhasil dihapus",
@@ -249,7 +260,7 @@ export default function NovelList() {
         </Button>
       </div>
 
-      {/* Search */}
+      {/* ... (Search input) */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
@@ -264,6 +275,7 @@ export default function NovelList() {
       <div className="rounded-md border border-border overflow-x-auto">
         <Table>
           <TableHeader>
+            {/* ... (Table Headers) */}
             <TableRow>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -352,7 +364,12 @@ export default function NovelList() {
                     variant={novel.is_published ? "default" : "secondary"}
                     size="sm"
                     className="h-7 text-xs"
-                    onClick={(e) => handlePublishToggle(novel.id, novel.is_published, e)}
+                    disabled={userRole !== "admin"} // Disable for non-admins
+                    onClick={(e) => {
+                      if (userRole === "admin") {
+                        handlePublishToggle(novel.id, novel.is_published, e);
+                      }
+                    }}
                   >
                     {novel.is_published ? "Published" : "Draft"}
                   </Button>
@@ -407,16 +424,18 @@ export default function NovelList() {
                           Chapters
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteId(novel.id);
-                        }}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Hapus
-                      </DropdownMenuItem>
+                      {userRole === "admin" && ( // Only show Delete for admins
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteId(novel.id);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Hapus
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -428,6 +447,7 @@ export default function NovelList() {
 
       {/* Pagination Controls */}
       <div className="flex items-center justify-end space-x-2 py-4">
+        {/* ... (Existing Pagination) */}
         <Button
           variant="outline"
           size="sm"
@@ -469,3 +489,4 @@ export default function NovelList() {
     </div>
   );
 }
+

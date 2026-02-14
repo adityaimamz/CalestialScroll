@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { logAdminAction } from "@/services/adminLogger";
 
 interface UserWithRole {
   id: string;
@@ -181,6 +182,11 @@ export default function UserList() {
       // Update local state
       setUsers(users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
 
+      await logAdminAction("UPDATE", "USER", userId, {
+        action: "CHANGE_ROLE",
+        new_role: newRole,
+      });
+
       toast({
         title: "Berhasil",
         description: "Role user berhasil diubah",
@@ -202,6 +208,10 @@ export default function UserList() {
       if (error) throw error;
 
       setUsers(users.filter((user) => user.id !== userId));
+
+      await logAdminAction("DELETE", "USER", userId, {
+        action: "DELETE_USER",
+      });
 
       toast({
         title: "Berhasil",

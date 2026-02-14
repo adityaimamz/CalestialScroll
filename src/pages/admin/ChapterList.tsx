@@ -25,6 +25,8 @@ import { Plus, Search, Pencil, Trash2, ArrowLeft, ArrowUpDown, ArrowUp, ArrowDow
 import { BarLoader } from "@/components/ui/BarLoader";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { logAdminAction } from "@/services/adminLogger";
 
 interface Chapter {
   id: string;
@@ -54,6 +56,7 @@ export default function ChapterList() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "chapter_number", direction: "desc" });
   const { toast } = useToast();
+  const { userRole } = useAuth();
 
   useEffect(() => {
     if (novelId) {
@@ -106,6 +109,11 @@ export default function ChapterList() {
       if (error) throw error;
 
       setChapters(chapters.filter((c) => c.id !== deleteId));
+
+      await logAdminAction("DELETE", "CHAPTER", deleteId, {
+        novel_id: novelId,
+      });
+
       toast({
         title: "Berhasil",
         description: "Chapter berhasil dihapus",
@@ -253,13 +261,15 @@ export default function ChapterList() {
                           <Pencil className="h-4 w-4" />
                         </Link>
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteId(chapter.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {userRole === "admin" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteId(chapter.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

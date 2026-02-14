@@ -379,6 +379,44 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_logs: {
+        Row: {
+          id: string
+          admin_id: string
+          action_type: string
+          entity_type: string
+          entity_id: string | null
+          details: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          admin_id: string
+          action_type: string
+          entity_type: string
+          entity_id?: string | null
+          details?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          admin_id?: string
+          action_type?: string
+          entity_type?: string
+          entity_id?: string | null
+          details?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_logs_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       genres: {
         Row: {
           id: string

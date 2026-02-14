@@ -14,6 +14,7 @@ import { AuthListener } from "@/components/auth/AuthListener";
 import CommentReports from "./pages/admin/CommentReports";
 import ChapterReports from "./pages/admin/ChapterReports";
 import Activity from "./pages/admin/Activity";
+import AdminLogs from "./pages/admin/AdminLogs";
 import FollowCursor from "@/components/ui/FollowCursor";
 
 // Public pages
@@ -101,6 +102,7 @@ const App = () => (
                   <Route path="/admin/reports/comments" element={<CommentReports />} />
                   <Route path="/admin/reports/chapters" element={<ChapterReports />} />
                   <Route path="/admin/activity" element={<Activity />} />
+                  <Route path="/admin/logs" element={<AdminLogs />} /> {/* New logs route */}
                 </Route>
               </Route>
             </Routes>

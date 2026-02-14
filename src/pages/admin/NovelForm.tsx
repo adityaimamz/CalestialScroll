@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, X, Plus, Pencil, Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowLeft, X, Plus, Pencil, Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -39,6 +39,8 @@ import {
 import { format } from "date-fns";
 import { BarLoader } from "@/components/ui/BarLoader";
 import { ImageUpload } from "@/components/ImageUpload";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { logAdminAction } from "@/services/adminLogger";
 
 
 interface Genre {
@@ -95,6 +97,8 @@ export default function NovelForm() {
   const [loadingChapters, setLoadingChapters] = useState(false);
   const [deleteChapterId, setDeleteChapterId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "chapter_number", direction: "asc" });
+  const [chapterSearchQuery, setChapterSearchQuery] = useState("");
+  const { userRole } = useAuth();
 
   useEffect(() => {
     fetchGenres();
@@ -254,6 +258,11 @@ export default function NovelForm() {
           .eq("id", id);
 
         if (error) throw error;
+
+        await logAdminAction("UPDATE", "NOVEL", id, {
+          title: novelData.title,
+          slug: novelData.slug,
+        });
       } else {
         const { data, error } = await supabase
           .from("novels")
@@ -263,6 +272,11 @@ export default function NovelForm() {
 
         if (error) throw error;
         novelId = data.id;
+
+        await logAdminAction("CREATE", "NOVEL", data.id, {
+          title: novelData.title,
+          slug: novelData.slug,
+        });
       }
 
       // Update novel_genres relationships
@@ -320,6 +334,11 @@ export default function NovelForm() {
       if (error) throw error;
 
       setChapters(chapters.filter((c) => c.id !== deleteChapterId));
+
+      await logAdminAction("DELETE", "CHAPTER", deleteChapterId, {
+        novel_id: id,
+      });
+
       toast({
         title: "Berhasil",
         description: "Chapter berhasil dihapus",
@@ -356,6 +375,12 @@ export default function NovelForm() {
     const compareResult = aValue < bValue ? -1 : 1;
     return sortConfig.direction === "asc" ? compareResult : -compareResult;
   });
+
+  // Filter chapters based on search query
+  const filteredChapters = sortedChapters.filter((chapter) =>
+    chapter.title.toLowerCase().includes(chapterSearchQuery.toLowerCase()) ||
+    chapter.chapter_number.toString().includes(chapterSearchQuery)
+  );
 
   const SortIcon = ({ columnKey }: { columnKey: keyof Chapter }) => {
     if (sortConfig.key !== columnKey) return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/30" />;
@@ -563,6 +588,16 @@ export default function NovelForm() {
               </Button>
             </CardHeader>
             <CardContent>
+              {/* Search Input */}
+              <div className="mb-4 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari chapter..."
+                  value={chapterSearchQuery}
+                  onChange={(e) => setChapterSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
               <div className="rounded-md border max-h-[500px] overflow-y-auto">
                 <Table>
                   <TableHeader>
@@ -604,14 +639,14 @@ export default function NovelForm() {
                           <BarLoader />
                         </TableCell>
                       </TableRow>
-                    ) : chapters.length === 0 ? (
+                    ) : filteredChapters.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                          Belum ada chapter. Silakan tambah chapter baru.
+                          {chapters.length === 0 ? "Belum ada chapter. Silakan tambah chapter baru." : "Tidak ada chapter yang cocok dengan pencarian."}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      sortedChapters.map((chapter) => (
+                      filteredChapters.map((chapter) => (
                         <TableRow key={chapter.id}>
                           <TableCell className="font-medium">{chapter.chapter_number}</TableCell>
                           <TableCell>{chapter.title}</TableCell>
@@ -627,13 +662,15 @@ export default function NovelForm() {
                                   <Pencil className="h-4 w-4" />
                                 </Link>
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setDeleteChapterId(chapter.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                              {userRole === "admin" && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDeleteChapterId(chapter.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>

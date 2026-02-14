@@ -15,6 +15,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide
 import { BarLoader } from "@/components/ui/BarLoader";
 import { ImageUpload } from "@/components/ImageUpload";
 import { UploadButton } from "@/utils/uploadthing";
+import { logAdminAction } from "@/services/adminLogger";
 
 interface ChapterFormData {
   chapter_number: number;
@@ -164,14 +165,26 @@ export default function ChapterForm() {
 
         if (error) throw error;
 
+        await logAdminAction("UPDATE", "CHAPTER", chapterId, {
+          title: chapterData.title,
+          chapter_number: chapterData.chapter_number,
+          novel_id: novelId,
+        });
+
         toast({
           title: "Berhasil",
           description: "Chapter berhasil diupdate",
         });
       } else {
-        const { error } = await supabase.from("chapters").insert(chapterData);
+        const { data, error } = await supabase.from("chapters").insert(chapterData).select().single();
 
         if (error) throw error;
+
+        await logAdminAction("CREATE", "CHAPTER", data.id, {
+          title: chapterData.title,
+          chapter_number: chapterData.chapter_number,
+          novel_id: novelId,
+        });
 
         toast({
           title: "Berhasil",

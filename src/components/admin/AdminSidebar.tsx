@@ -1,4 +1,4 @@
-import { LayoutDashboard, BookText, Users, Megaphone, Tags, Flag, MessageSquareWarning, Settings, ChevronRight, Activity } from "lucide-react";
+import { LayoutDashboard, BookText, Users, Megaphone, Tags, Flag, MessageSquareWarning, Settings, ChevronRight, Activity, ClipboardList } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -18,14 +18,17 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
+import { useAuth } from "@/components/auth/AuthProvider";
+
 const menuItems = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Novel", url: "/admin/novels", icon: BookText },
-  { title: "Genres", url: "/admin/genres", icon: Tags },
-  { title: "Announcements", url: "/admin/announcements", icon: Megaphone },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard, roles: ["admin", "moderator"] },
+  { title: "Novel", url: "/admin/novels", icon: BookText, roles: ["admin", "moderator"] },
+  { title: "Genres", url: "/admin/genres", icon: Tags, roles: ["admin"] },
+  { title: "Announcements", url: "/admin/announcements", icon: Megaphone, roles: ["admin"] },
   {
     title: "Reports",
     icon: Flag,
+    roles: ["admin", "moderator"],
     items: [
       {
         title: "Reports Comment",
@@ -39,19 +42,27 @@ const menuItems = [
       },
     ]
   },
-  { title: "Activity", url: "/admin/activity", icon: Activity },
-  { title: "Users", url: "/admin/users", icon: Users },
+  { title: "Activity", url: "/admin/activity", icon: Activity, roles: ["admin"] },
+  { title: "Admin Logs", url: "/admin/logs", icon: ClipboardList, roles: ["admin", "moderator"] },
+  { title: "Users", url: "/admin/users", icon: Users, roles: ["admin"] },
   {
     title: "Settings",
     url: "/settings",
     icon: Settings,
+    roles: ["admin", "moderator"]
   },
 ];
 
 export function AdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const { userRole } = useAuth();
   const collapsed = state === "collapsed";
+
+  const filteredMenuItems = menuItems.filter(item =>
+    item.roles.includes(userRole || "user")
+  );
+
 
   const isActive = (path: string) => {
     if (path === "/admin") {
@@ -78,7 +89,7 @@ export function AdminSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">

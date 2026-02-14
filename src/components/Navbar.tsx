@@ -23,7 +23,7 @@ import { NotificationDropdown } from "@/components/NotificationDropdown";
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, userRole } = useAuth();
   const navigate = useNavigate();
 
   // Search State
@@ -223,9 +223,9 @@ export default function Navbar() {
                             <span>Profile</span>
                         </Link>
                     </DropdownMenuItem> */}
-                    {isAdmin && (
+                    {(isAdmin || userRole === "moderator") && (
                       <DropdownMenuItem asChild>
-                        <Link to="/admin/novels" className="cursor-pointer">
+                        <Link to="/admin" className="cursor-pointer">
                           <Shield className="mr-2 h-4 w-4" />
                           <span>Admin Dashboard</span>
                         </Link>
@@ -371,8 +371,8 @@ export default function Navbar() {
                         Settings
                       </Button>
                     </Link>
-                    {isAdmin && (
-                      <Link to="/admin/novels" onClick={() => setIsMenuOpen(false)}>
+                    {(isAdmin || userRole === "moderator") && (
+                      <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start">
                           <Shield className="mr-2 h-4 w-4" />
                           Admin
