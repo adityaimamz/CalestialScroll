@@ -1,6 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Star, BookOpen, Clock, Tag, ChevronLeft, List, Info, PlayCircle, Search, ArrowUp, ArrowDown, Eye } from "lucide-react";
+import { Star, BookOpen, Clock, Tag, ChevronLeft, List, Info, PlayCircle, Search, ArrowUp, ArrowDown, Eye, Loader2 } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { BarLoader } from "@/components/ui/BarLoader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +37,7 @@ const NovelDetail = () => {
   const [novel, setNovel] = useState<Novel | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chaptersLoading, setChaptersLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [userRating, setUserRating] = useState<number>(0);
   const [readChapterIds, setReadChapterIds] = useState<Set<string>>(new Set());
@@ -36,6 +46,10 @@ const NovelDetail = () => {
   // Chapter List State
   const [chapterSearchQuery, setChapterSearchQuery] = useState("");
   const [chapterSortOrder, setChapterSortOrder] = useState<"asc" | "desc">("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const CHAPTERS_PER_PAGE = 20;
+  const [totalChapterCount, setTotalChapterCount] = useState(0);
+  const [firstChapterNumber, setFirstChapterNumber] = useState<number | null>(null);
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [lastReadChapterNumber, setLastReadChapterNumber] = useState<number | null>(null);
 
@@ -101,15 +115,25 @@ const NovelDetail = () => {
 
       setBookmarkCount(countData || 0);
 
-      // 2. Fetch Chapters using novel_id
-      const { data: chaptersData, error: chaptersError } = await supabase
+      // 2. Fetch total chapter count (lightweight)
+      const { count: chapterCount, error: countError } = await supabase
         .from("chapters")
-        .select("*, views")
-        .eq("novel_id", novelData.id)
-        .order("chapter_number", { ascending: false });
+        .select("id", { count: "exact", head: true })
+        .eq("novel_id", novelData.id);
 
-      if (chaptersError) throw chaptersError;
-      setChapters((chaptersData as unknown as Chapter[]) || []);
+      if (countError) console.error("Error fetching chapter count:", countError);
+      setTotalChapterCount(chapterCount || 0);
+
+      // 3. Fetch first chapter number for "Read Now" button
+      const { data: firstChapter } = await supabase
+        .from("chapters")
+        .select("chapter_number")
+        .eq("novel_id", novelData.id)
+        .order("chapter_number", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      setFirstChapterNumber(firstChapter?.chapter_number ?? null);
 
     } catch (error) {
       console.error("Error fetching novel details:", error);
@@ -234,35 +258,81 @@ const NovelDetail = () => {
     }
   };
 
-  // Filter and Sort Chapters
-  const getProcessedChapters = () => {
-    let filtered = [...chapters];
+  // Debounce search to avoid too many requests
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(chapterSearchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [chapterSearchQuery]);
 
-    if (chapterSearchQuery) {
-      const query = chapterSearchQuery.trim();
-      // Check if query is a number
-      const isNumber = /^\d+$/.test(query);
+  // Server-side chapter fetching with pagination
+  const fetchChapters = useCallback(async () => {
+    if (!novel) return;
+    setChaptersLoading(true);
+    try {
+      const from = (currentPage - 1) * CHAPTERS_PER_PAGE;
+      const to = from + CHAPTERS_PER_PAGE - 1;
 
-      if (isNumber) {
-        // Exact match for chapter number
-        const num = parseFloat(query);
-        filtered = filtered.filter(ch => ch.chapter_number === num);
-      } else {
-        // Fuzzy match for title
-        filtered = filtered.filter(ch => ch.title.toLowerCase().includes(query.toLowerCase()));
+      let query = supabase
+        .from("chapters")
+        .select("*, views", { count: "exact" })
+        .eq("novel_id", novel.id);
+
+      // Server-side search (uses debounced value)
+      if (debouncedSearch.trim()) {
+        const searchTerm = debouncedSearch.trim();
+        const isNumber = /^\d+$/.test(searchTerm);
+        if (isNumber) {
+          query = query.eq("chapter_number", parseFloat(searchTerm));
+        } else {
+          query = query.ilike("title", `%${searchTerm}%`);
+        }
       }
+
+      // Server-side sort + pagination
+      query = query
+        .order("chapter_number", { ascending: chapterSortOrder === "asc" })
+        .range(from, to);
+
+      const { data, count, error } = await query;
+
+      if (error) throw error;
+      setChapters((data as unknown as Chapter[]) || []);
+      setTotalChapterCount(count || 0);
+    } catch (error) {
+      console.error("Error fetching chapters:", error);
+    } finally {
+      setChaptersLoading(false);
     }
+  }, [novel, currentPage, chapterSortOrder, debouncedSearch]);
 
-    // Sort
-    filtered.sort((a, b) => {
-      const diff = a.chapter_number - b.chapter_number;
-      return chapterSortOrder === "asc" ? diff : -diff;
-    });
+  // Fetch chapters when dependencies change
+  useEffect(() => {
+    fetchChapters();
+  }, [fetchChapters]);
 
-    return filtered;
+  // Reset page when search or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, chapterSortOrder]);
+
+  const totalPages = Math.ceil(totalChapterCount / CHAPTERS_PER_PAGE);
+
+  const getPageNumbers = () => {
+    const pages: (number | "ellipsis")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("ellipsis");
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push("ellipsis");
+      pages.push(totalPages);
+    }
+    return pages;
   };
-
-  const processedChapters = getProcessedChapters();
 
   const handleReadNow = () => {
     if (user && lastReadChapterNumber !== null) {
@@ -270,10 +340,8 @@ const NovelDetail = () => {
       return;
     }
 
-    if (chapters.length > 0) {
-      // Find the first chapter (lowest chapter number)
-      const firstChapter = [...chapters].sort((a, b) => a.chapter_number - b.chapter_number)[0];
-      navigate(`/series/${id}/chapter/${firstChapter.chapter_number}`);
+    if (firstChapterNumber !== null) {
+      navigate(`/series/${id}/chapter/${firstChapterNumber}`);
     } else {
       toast({
         title: "No Chapters",
@@ -365,7 +433,7 @@ const NovelDetail = () => {
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">
               <BookOpen className="w-4 h-4" />
-              <span>{chapters.length} Chapters</span>
+              <span>{totalChapterCount} Chapters</span>
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">
               <Clock className="w-4 h-4" />
@@ -439,7 +507,7 @@ const NovelDetail = () => {
           <TabsContent value="chapters" className="animate-fade-in">
             <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
               <div className="p-4 bg-muted/30 border-b border-border flex flex-col sm:flex-row justify-between items-center gap-4">
-                <span className="font-medium text-muted-foreground mr-auto">Total {chapters.length} chapters</span>
+                <span className="font-medium text-muted-foreground mr-auto">Total {totalChapterCount} chapters</span>
 
                 <div className="flex w-full sm:w-auto gap-2">
                   <div className="relative flex-1 sm:w-64">
@@ -462,13 +530,18 @@ const NovelDetail = () => {
                   </Button>
                 </div>
               </div>
-              <div className="divide-y divide-border max-h-[600px] overflow-y-auto">
-                {processedChapters.length === 0 ? (
+              <div className="divide-y divide-border relative">
+                {chaptersLoading && (
+                  <div className="absolute inset-0 bg-background/60 z-10 flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                )}
+                {chapters.length === 0 && !chaptersLoading ? (
                   <div className="p-8 text-center text-muted-foreground">
-                    {chapters.length === 0 ? "No chapters uploaded yet." : "No chapters found matching your search."}
+                    {totalChapterCount === 0 ? "No chapters uploaded yet." : "No chapters found matching your search."}
                   </div>
                 ) : (
-                  processedChapters.map((chapter) => (
+                  chapters.map((chapter) => (
                     <div
                       key={chapter.id}
                       className="p-4 hover:bg-muted/50 transition-colors flex justify-between items-center group cursor-pointer"
@@ -496,6 +569,46 @@ const NovelDetail = () => {
                   ))
                 )}
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                      {getPageNumbers().map((page, idx) => (
+                        <PaginationItem key={idx}>
+                          {page === "ellipsis" ? (
+                            <PaginationEllipsis />
+                          ) : (
+                            <PaginationLink
+                              isActive={page === currentPage}
+                              onClick={() => setCurrentPage(page)}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          )}
+                        </PaginationItem>
+                      ))}
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
