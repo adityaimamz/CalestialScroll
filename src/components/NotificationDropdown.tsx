@@ -142,11 +142,12 @@ export function NotificationDropdown() {
 
     const handleNotificationClick = async (notification: Notification) => {
         if (!notification.is_read) {
-            await markAsRead(notification.id);
+            // Don't await the DB update to prevent blocking navigation
+            markAsRead(notification.id);
         }
 
         // Logic to navigate based on type
-        if (notification.type === "reply" && notification.entity_id) {
+        if ((notification.type === "reply" || notification.type === "like") && notification.entity_id) {
             try {
                 // Fetch comment to get novel_id/chapter_id
                 const { data: comment } = await supabase
@@ -207,7 +208,7 @@ export function NotificationDropdown() {
                                     key={notification.id}
                                     className={`flex items-start gap-3 p-3 cursor-pointer ${!notification.is_read ? "bg-muted/40" : ""
                                         }`}
-                                    onClick={() => handleNotificationClick(notification)}
+                                    onSelect={() => handleNotificationClick(notification)}
                                 >
                                     <Avatar className="w-8 h-8 mt-0.5 border border-border">
                                         <AvatarImage src={notification.actor?.avatar_url || ""} />
