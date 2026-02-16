@@ -36,6 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { logAdminAction } from "@/services/adminLogger";
+import UserProfileModal from "@/components/UserProfileModal";
 
 interface UserWithRole {
   id: string;
@@ -53,6 +54,8 @@ export default function UserList() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
 
 
@@ -65,25 +68,6 @@ export default function UserList() {
     return () => clearTimeout(timer);
   }, [page, searchQuery]);
 
-  // When search changes, we want to reset page to 1, but if we include page in dependency array of useEffect
-  // and we also setPage(1) inside useEffect, it might loop or race.
-  // Better: useEffect on [page] calls fetch. useEffect on [search] sets page 1 (which triggers fetch).
-  // Actually, standard pattern: 
-  // useEffect(() => { fetch() }, [page, searchQuery]); 
-  // But if search changes, we probably want to go to page 1 manually or have a separate effect.
-  // For simplicity, let's just keep the single effect and I'll manually setPage(1) in the input onChange?
-  // No, let's do:
-
-  // Separate effect for search reset is cleaner but standard hook often combines.
-  // Let's stick to the previous pattern I used in NovelList but be careful.
-  // In NovelList I had: useEffect(() => { fetch() }, [page, searchQuery, sortConfig]);
-  // And setSearchQuery just sets state.
-  // If I change search, page remains 5. If result < 5 pages, it might return empty.
-  // So I should reset page when search changes.
-
-  // Implementation below uses the NovelList pattern but with explicit page reset handled in the render or onChange?
-  // I will add a separate effect for resetting page on search change?
-  // Or just modify the Input onChange to setPage(1).
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -289,7 +273,13 @@ export default function UserList() {
 
             {!loading && users.length > 0 && users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell>
+                <TableCell
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => {
+                    setSelectedUserId(user.id);
+                    setShowProfileModal(true);
+                  }}
+                >
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.avatar_url || undefined} />
@@ -376,6 +366,12 @@ export default function UserList() {
           Next
         </Button>
       </div>
+
+      <UserProfileModal
+        userId={selectedUserId}
+        isOpen={showProfileModal}
+        onOpenChange={setShowProfileModal}
+      />
     </div>
   );
 }
