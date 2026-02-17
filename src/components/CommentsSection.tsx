@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Send, User as UserIcon, Trash2, MessageCircle, ThumbsUp, ThumbsDown, Flag, MoreHorizontal, Edit2, ChevronDown, ChevronUp } from "lucide-react";
+import { Send, User as UserIcon, Trash2, MessageCircle, ThumbsUp, ThumbsDown, Flag, MoreHorizontal, Edit2, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -537,7 +537,7 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
                   }}
                   disabled={isLoading}
                 >
-                  {isLoading ? <BarLoader /> : "Load More Comments"}
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Load More Comments"}
                 </Button>
               </div>
             )}
@@ -588,7 +588,7 @@ const CommentInput = ({
           </Button>
         )}
         <Button type="submit" disabled={isSubmitting || !content.trim()} className="gap-2">
-          {isSubmitting ? <BarLoader /> : <Send className="w-4 h-4" />}
+          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Post
         </Button>
       </div>
@@ -827,7 +827,7 @@ const ReportModal = ({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!reason.trim() || isSubmitting}>
-            {isSubmitting ? <BarLoader /> : null}
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Submit Report
           </Button>
         </DialogFooter>
@@ -867,7 +867,7 @@ const DeleteConfirmModal = ({
             Cancel
           </Button>
           <Button variant="destructive" onClick={handleConfirm} disabled={isDeleting}>
-            {isDeleting ? <BarLoader /> : <Trash2 className="w-4 h-4 mr-2" />}
+            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
             Delete
           </Button>
         </DialogFooter>

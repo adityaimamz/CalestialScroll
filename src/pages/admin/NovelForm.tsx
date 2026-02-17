@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, X, Plus, Pencil, Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
+import { ArrowLeft, X, Plus, Pencil, Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown, Search, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -567,7 +567,7 @@ export default function NovelForm() {
                     Batal
                   </Button>
                   <Button type="submit" className="flex-1" disabled={saving}>
-                    {saving && <BarLoader />}
+                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isEditing ? "Update" : "Simpan"}
                   </Button>
                 </div>

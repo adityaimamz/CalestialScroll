@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Home, ArrowLeft, List } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, ArrowLeft, List, Loader2 } from "lucide-react";
 import { BarLoader } from "@/components/ui/BarLoader";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -410,7 +410,7 @@ const ChapterReader = () => {
                   Batal
                 </Button>
                 <Button onClick={handleReportSubmit} disabled={isSubmittingReport}>
-                  {isSubmittingReport && <BarLoader className="mr-2" />}
+                  {isSubmittingReport && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Kirim Laporan
                 </Button>
               </DialogFooter>

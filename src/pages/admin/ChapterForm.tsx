@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowLeft, ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Image as ImageIcon, Loader2 } from "lucide-react";
 import { BarLoader } from "@/components/ui/BarLoader";
 import { ImageUpload } from "@/components/ImageUpload";
 import { UploadButton } from "@/utils/uploadthing";
@@ -434,7 +434,7 @@ export default function ChapterForm() {
                 Batal
               </Button>
               <Button type="submit" className="flex-1" disabled={saving}>
-                {saving && <BarLoader />}
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditing ? "Update" : "Simpan"}
               </Button>
             </div>
