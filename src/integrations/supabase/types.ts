@@ -108,7 +108,7 @@ export type Database = {
           id: string
           user_id: string
           actor_id: string | null
-          type: "reply" | "like" | "system"
+          type: "reply" | "like" | "system" | "admin_report" | "report_reply" | "admin_chapter_report" | "admin_comment_report"
           entity_id: string | null
           is_read: boolean
           created_at: string
@@ -117,7 +117,7 @@ export type Database = {
           id?: string
           user_id: string
           actor_id?: string | null
-          type: "reply" | "like" | "system"
+          type: "reply" | "like" | "system" | "admin_report" | "report_reply" | "admin_chapter_report" | "admin_comment_report"
           entity_id?: string | null
           is_read?: boolean
           created_at?: string
@@ -126,7 +126,7 @@ export type Database = {
           id?: string
           user_id?: string
           actor_id?: string | null
-          type?: "reply" | "like" | "system"
+          type?: "reply" | "like" | "system" | "admin_report" | "report_reply"
           entity_id?: string | null
           is_read?: boolean
           created_at?: string

@@ -168,6 +168,50 @@ const CommentReports = () => {
         }
     };
 
+    const [isReplyDialogOpen, setIsReplyDialogOpen] = useState(false);
+    const [replyText, setReplyText] = useState("");
+    const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+
+    const handleReplySubmit = async () => {
+        if (!selectedReport || !replyText.trim()) return;
+
+        setIsSubmittingReply(true);
+        try {
+            // 1. Update Report with Reply
+            const { error: updateError } = await supabase
+                .from("comment_reports" as any)
+                .update({
+                    admin_reply: replyText.trim(),
+                    admin_id: (await supabase.auth.getUser()).data.user?.id
+                })
+                .eq("id", selectedReport.id);
+
+            if (updateError) throw updateError;
+
+            // 2. Notify User
+            // @ts-ignore
+            await import("@/services/adminNotification").then(({ notifyUser }) =>
+                notifyUser(
+                    selectedReport.user_id,
+                    "report_reply",
+                    selectedReport.id,
+                    (supabase.auth.getUser() as any).data?.user?.id || "system"
+                )
+            ).catch(err => console.error("Failed to notify user", err));
+
+            toast({ title: "Reply Sent", description: "The reply has been sent to the user." });
+            setReports(prev => prev.map(r => r.id === selectedReport.id ? { ...r, admin_reply: replyText.trim() } as any : r));
+            setIsReplyDialogOpen(false);
+            setReplyText("");
+            setSelectedReport(null);
+        } catch (error) {
+            console.error("Error sending reply:", error);
+            toast({ title: "Error", description: "Failed to send reply.", variant: "destructive" });
+        } finally {
+            setIsSubmittingReply(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -223,6 +267,11 @@ const CommentReports = () => {
                                         ) : (
                                             <span className="italic text-muted-foreground">Comment deleted</span>
                                         )}
+                                        {(report as any).admin_reply && (
+                                            <div className="mt-2 text-xs text-muted-foreground border-t pt-1">
+                                                <span className="font-semibold text-green-600">Admin Reply:</span> {(report as any).admin_reply}
+                                            </div>
+                                        )}
                                     </TableCell>
                                     <TableCell>{report.reason}</TableCell>
                                     <TableCell className="text-muted-foreground text-sm">
@@ -230,6 +279,18 @@ const CommentReports = () => {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSelectedReport(report);
+                                                    setIsReplyDialogOpen(true);
+                                                }}
+                                                title="Reply to User"
+                                            >
+                                                Reply
+                                            </Button>
+
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -279,6 +340,37 @@ const CommentReports = () => {
                         </Button>
                         <Button variant="destructive" onClick={handleDeleteComment}>
                             Delete Comment
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isReplyDialogOpen} onOpenChange={setIsReplyDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reply to Report</DialogTitle>
+                        <DialogDescription>
+                            Send a message to the user about their report.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="bg-muted p-3 rounded-md text-sm">
+                            <span className="font-semibold block mb-1">Report Reason:</span>
+                            "{selectedReport?.reason}"
+                        </div>
+                        <textarea
+                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Type your reply here..."
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsReplyDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleReplySubmit} disabled={isSubmittingReply}>
+                            Send Reply
                         </Button>
                     </DialogFooter>
                 </DialogContent>

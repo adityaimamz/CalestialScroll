@@ -183,6 +183,51 @@ const ChapterReports = () => {
         }
     };
 
+    const [isReplyDialogOpen, setIsReplyDialogOpen] = useState(false);
+    const [replyText, setReplyText] = useState("");
+    const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+
+    const handleReplySubmit = async () => {
+        if (!selectedReport || !replyText.trim()) return;
+
+        setIsSubmittingReply(true);
+        try {
+            // 1. Update Report with Reply
+            const { error: updateError } = await supabase
+                .from("chapter_reports" as any)
+                .update({
+                    admin_reply: replyText.trim(),
+                    status: 'resolved',
+                    admin_id: (await supabase.auth.getUser()).data.user?.id
+                })
+                .eq("id", selectedReport.id);
+
+            if (updateError) throw updateError;
+
+            // 2. Notify User
+            // @ts-ignore
+            await import("@/services/adminNotification").then(({ notifyUser }) =>
+                notifyUser(
+                    selectedReport.user_id,
+                    "report_reply",
+                    selectedReport.id,
+                    (supabase.auth.getUser() as any).data?.user?.id || "system" // simplified
+                )
+            ).catch(err => console.error("Failed to notify user", err));
+
+            toast({ title: "Reply Sent", description: "The report has been resolved and the user notified." });
+            setReports(prev => prev.map(r => r.id === selectedReport.id ? { ...r, status: 'resolved', admin_reply: replyText.trim() } as any : r));
+            setIsReplyDialogOpen(false);
+            setReplyText("");
+            setSelectedReport(null);
+        } catch (error) {
+            console.error("Error sending reply:", error);
+            toast({ title: "Error", description: "Failed to send reply.", variant: "destructive" });
+        } finally {
+            setIsSubmittingReply(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -251,6 +296,11 @@ const ChapterReports = () => {
                                     </TableCell>
                                     <TableCell className="whitespace-pre-wrap text-sm">
                                         {report.report_text}
+                                        {(report as any).admin_reply && (
+                                            <div className="mt-2 text-xs text-muted-foreground border-t pt-1">
+                                                <span className="font-semibold">Reply:</span> {(report as any).admin_reply}
+                                            </div>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-sm">
                                         {formatDistanceToNow(new Date(report.created_at), { addSuffix: true })}
@@ -258,14 +308,27 @@ const ChapterReports = () => {
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
                                             {report.status !== 'resolved' && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleUpdateStatus(report.id, 'resolved')}
-                                                    title="Mark as Resolved"
-                                                >
-                                                    <CheckCircle className="h-4 w-4 text-green-500" />
-                                                </Button>
+                                                <>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleUpdateStatus(report.id, 'resolved')}
+                                                        title="Mark as Resolved"
+                                                    >
+                                                        <CheckCircle className="h-4 w-4 text-green-500" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setSelectedReport(report);
+                                                            setIsReplyDialogOpen(true);
+                                                        }}
+                                                        title="Reply & Resolve"
+                                                    >
+                                                        Reply
+                                                    </Button>
+                                                </>
                                             )}
 
                                             <Button
@@ -306,6 +369,37 @@ const ChapterReports = () => {
                         </Button>
                         <Button variant="destructive" onClick={handleDeleteReport}>
                             Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isReplyDialogOpen} onOpenChange={setIsReplyDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reply to Report</DialogTitle>
+                        <DialogDescription>
+                            Send a reply to the user and mark this report as resolved.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="bg-muted p-3 rounded-md text-sm">
+                            <span className="font-semibold block mb-1">User's Report:</span>
+                            "{selectedReport?.report_text}"
+                        </div>
+                        <textarea
+                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Type your reply here..."
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsReplyDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleReplySubmit} disabled={isSubmittingReply}>
+                            Send & Resolve
                         </Button>
                     </DialogFooter>
                 </DialogContent>

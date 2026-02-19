@@ -422,6 +422,7 @@ const CommentsSection = ({ novelId, chapterId }: CommentsSectionProps) => {
         reason: reason.trim(),
       });
       if (error) throw error;
+
       toast({ title: "Reported", description: "Comment has been reported for review." });
       setIsReportModalOpen(false);
       setReportingCommentId(null);
