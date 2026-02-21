@@ -9,6 +9,7 @@ import { BarLoader } from "@/components/ui/BarLoader";
 type Genre = Tables<"genres">;
 type Novel = Tables<"novels"> & {
   chapters: { count: number }[];
+  latest_chapter_date?: string | null;
 };
 
 const GenresSection = () => {
@@ -65,7 +66,8 @@ const GenresSection = () => {
           .select(`
             novel:novels!inner (
               *,
-              chapters (count)
+              chapters (count),
+              latest_chapter:chapters (created_at)
             )
           `)
           .eq("novel.is_published", true)
@@ -76,7 +78,20 @@ const GenresSection = () => {
         if (error) throw error;
 
         // Extract the novel objects from the junction result
-        const formattedNovels = data.map((item: any) => item.novel).filter(Boolean);
+        const formattedNovels = data.map((item: any) => {
+          // Find the most recent chapter created_at by sorting client-side
+          const chapters = item.novel?.latest_chapter || [];
+          const latestDate = chapters.length > 0
+            ? chapters
+              .map((ch: any) => ch.created_at)
+              .sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())[0]
+            : null;
+
+          return {
+            ...item.novel,
+            latest_chapter_date: latestDate,
+          };
+        }).filter(Boolean);
         setNovels(formattedNovels);
       } catch (error) {
         console.error("Error fetching novels for genre:", error);
@@ -133,7 +148,7 @@ const GenresSection = () => {
               chapters={novel.chapters?.[0]?.count || 0}
               size="large"
               slug={novel.slug}
-              lastUpdate={novel.updated_at}
+              lastUpdate={novel.latest_chapter_date || novel.updated_at}
             />
           ))}
         </div>

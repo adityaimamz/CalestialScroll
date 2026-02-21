@@ -7,6 +7,7 @@ import SectionHeader from "@/components/SectionHeader";
 
 type Novel = Tables<"novels"> & {
   chapters_count?: number;
+  latest_chapter_date?: string | null;
 };
 
 const NewReleasesSection = () => {
@@ -21,8 +22,9 @@ const NewReleasesSection = () => {
     try {
       const { data, error } = await supabase
         .from("novels")
-        .select("*, chapters(count)")
+        .select("*, chapters(count), latest_chapter:chapters(created_at)")
         .order("created_at", { ascending: false })
+        .order("created_at", { referencedTable: "latest_chapter", ascending: false })
         .eq("is_published", true)
         .neq("id", "00000000-0000-0000-0000-000000000000")
         .limit(6);
@@ -30,9 +32,10 @@ const NewReleasesSection = () => {
       if (error) throw error;
 
       if (data) {
-        const novelsWithChapterCount = data.map(novel => ({
+        const novelsWithChapterCount = data.map((novel: any) => ({
           ...novel,
           chapters_count: novel.chapters?.[0]?.count || 0,
+          latest_chapter_date: novel.latest_chapter?.[0]?.created_at || null,
         }));
         setNovels(novelsWithChapterCount);
       }
@@ -74,7 +77,7 @@ const NewReleasesSection = () => {
             chapters={novel.chapters_count || 0}
             // genre={novel.genres?.[0] || "Unknown"}
             size="medium"
-            lastUpdate={novel.updated_at}
+            lastUpdate={novel.latest_chapter_date || novel.updated_at}
           />
         ))}
       </div>
