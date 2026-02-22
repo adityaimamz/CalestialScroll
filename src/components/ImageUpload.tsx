@@ -1,5 +1,5 @@
 
-import { UploadButton, UploadDropzone } from "../utils/uploadthing";
+import { UploadButton } from "../utils/uploadthing";
 import { useState } from "react";
 import { X } from "lucide-react";
 
@@ -38,8 +38,19 @@ export const ImageUpload = ({ value, onChange, endpoint = "imageUploader" }: Ima
                 onClientUploadComplete={(res) => {
                     // Do something with the response
                     console.log("Files: ", res);
-                    if (res && res[0]) {
-                        onChange(res[0].url);
+                    const uploadedFile = res?.[0];
+                    if (uploadedFile) {
+                        const webpUrl = uploadedFile.serverData?.webpUrl;
+                        // Use webpUrl if available, otherwise fall back to the uploaded file URL
+                        // eslint-disable-next-line deprecation/deprecation
+                        const fileUrl = webpUrl || uploadedFile.url;
+                        
+                        onChange(fileUrl);
+                        if (webpUrl) {
+                            console.log("Using WebP optimized image:", webpUrl);
+                        } else {
+                            console.warn("WebP conversion unavailable, using original image");
+                        }
                         setError("");
                     }
                 }}

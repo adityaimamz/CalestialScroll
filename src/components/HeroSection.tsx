@@ -72,13 +72,16 @@ const HeroSection = () => {
         className="w-full h-full"
       >
         <CarouselContent className="-ml-0">
-          {novels.map((novel) => (
+          {novels.map((novel, index) => (
             <CarouselItem key={novel.id} className="pl-0 relative min-h-[500px] md:min-h-[600px]">
               {/* Background Image - Atmospheric Blur Effect */}
               <div className="absolute inset-0 overflow-hidden">
                 <img
                   src={novel.cover_url || heroBanner}
                   alt={novel.title}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  fetchPriority={index === 0 ? "high" : "auto"}
+                  decoding="async"
                   className="w-full h-full object-cover object-center blur-sm scale-110 brightness-[0.4] transition-all duration-700"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = heroBanner;

@@ -1,17 +1,25 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
-import AnnouncementsSection from "@/components/AnnouncementsSection";
-import TopSeriesSection from "@/components/TopSeriesSection";
-import PopularSection from "@/components/PopularSection";
-import NewReleasesSection from "@/components/NewReleasesSection";
-import GenresSection from "@/components/GenresSection";
-import RecentUpdatesSection from "@/components/RecentUpdatesSection";
-import RequestSection from "@/components/RequestSection";
-import RecentlyReadSection from "@/components/RecentlyReadSection";
+
+const AnnouncementsSection = lazy(() => import("@/components/AnnouncementsSection"));
+const TopSeriesSection = lazy(() => import("@/components/TopSeriesSection"));
+const PopularSection = lazy(() => import("@/components/PopularSection"));
+const NewReleasesSection = lazy(() => import("@/components/NewReleasesSection"));
+const GenresSection = lazy(() => import("@/components/GenresSection"));
+const RecentUpdatesSection = lazy(() => import("@/components/RecentUpdatesSection"));
+const RequestSection = lazy(() => import("@/components/RequestSection"));
+const RecentlyReadSection = lazy(() => import("@/components/RecentlyReadSection"));
+
+const SectionFallback = () => (
+  <div className="section-container py-6">
+    <div className="h-24 rounded-xl bg-muted/20" />
+  </div>
+);
 
 const Index = () => {
   const location = useLocation();
+  const [deferSections, setDeferSections] = useState(false);
 
   useEffect(() => {
     if (location.hash) {
@@ -40,27 +48,43 @@ const Index = () => {
     }
   }, [location]);
 
+  useEffect(() => {
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(() => setDeferSections(true));
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = window.setTimeout(() => setDeferSections(true), 200);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   return (
     <main>
       <HeroSection />
-      <AnnouncementsSection />
-      <RecentlyReadSection />
-      <TopSeriesSection />
+      {deferSections ? (
+        <Suspense fallback={<SectionFallback />}>
+          <AnnouncementsSection />
+          <RecentlyReadSection />
+          <TopSeriesSection />
 
-      <div className="section-container grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
-        <div className="lg:col-span-2 space-y-8">
-          <NewReleasesSection />
-          <GenresSection />
-        </div>
+          <div className="section-container grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+            <div className="lg:col-span-2 space-y-8">
+              <NewReleasesSection />
+              <GenresSection />
+            </div>
 
-        <div className="lg:col-span-1">
-          <PopularSection />
-        </div>
-      </div>
+            <div className="lg:col-span-1">
+              <PopularSection />
+            </div>
+          </div>
 
-      <RecentUpdatesSection />
+          <RecentUpdatesSection />
 
-      <RequestSection />
+          <RequestSection />
+        </Suspense>
+      ) : (
+        <SectionFallback />
+      )}
 
       {/* <SneakPeeksSection /> */}
     </main>

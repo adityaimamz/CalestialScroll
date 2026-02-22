@@ -1,10 +1,5 @@
 import { FloatingDock } from "@/components/ui/floating-dock";
-import {
-    IconHome,
-    IconBooks,
-    IconBookmark,
-    IconTags,
-} from "@tabler/icons-react";
+import { IconHome, IconBooks, IconBookmark, IconTags } from "@tabler/icons-react";
 
 export function FloatingDockNavigation() {
     const links = [
