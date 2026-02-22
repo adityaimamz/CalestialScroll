@@ -7,13 +7,19 @@ const utapi = new UTApi();
 
 const auth = (req: Request) => ({ id: "fakeId" }); // Fake auth function
 
+// Supported animated formats that should NOT be converted
+const SKIP_CONVERSION_FORMATS = new Set(["image/gif", "image/avif"]);
+
 /**
  * Converts an uploaded image to WebP format and uploads it
- * @returns The WebP URL if successful, otherwise the original URL
+ * Skips conversion for already optimized formats (WebP, AVIF) and animations (GIF)
+ * @returns The converted/optimized URL or the original URL if conversion is skipped
  */
-async function convertToWebP(file: { url: string; type: string; name?: string; key: string }): Promise<string> {
-    if (file.type === "image/webp") {
-        return file.url;
+async function convertToWebP(file: { url: string; type: string; name?: string; key: string }): Promise<{ url: string; wasConverted: boolean }> {
+    // Skip conversion for already optimized formats
+    if (file.type === "image/webp" || SKIP_CONVERSION_FORMATS.has(file.type)) {
+        console.log(`Skipping conversion for ${file.type} - already optimized`);
+        return { url: file.url, wasConverted: false };
     }
 
     try {
@@ -45,7 +51,7 @@ async function convertToWebP(file: { url: string; type: string; name?: string; k
                 }
             }
             
-            return uploadResult.data.ufsUrl;
+            return { url: uploadResult.data.ufsUrl, wasConverted: true };
         }
 
         if (uploadResult?.error) {
@@ -56,7 +62,7 @@ async function convertToWebP(file: { url: string; type: string; name?: string; k
     }
 
     console.log("Falling back to original file:", file.url);
-    return file.url;
+    return { url: file.url, wasConverted: false };
 }
 
 // FileRouter for your app, can contain multiple FileRoutes
@@ -65,7 +71,12 @@ export const ourFileRouter = {
     imageUploader: f({
         "image/jpeg": { maxFileSize: "4MB", maxFileCount: 1 },
         "image/png": { maxFileSize: "4MB", maxFileCount: 1 },
-        "image/webp": { maxFileSize: "4MB", maxFileCount: 1 }
+        "image/webp": { maxFileSize: "4MB", maxFileCount: 1 },
+        "image/gif": { maxFileSize: "4MB", maxFileCount: 1 },
+        "image/avif": { maxFileSize: "4MB", maxFileCount: 1 },
+        "image/svg+xml": { maxFileSize: "4MB", maxFileCount: 1 },
+        "image/tiff": { maxFileSize: "4MB", maxFileCount: 1 },
+        "image/x-icon": { maxFileSize: "4MB", maxFileCount: 1 },
     })
         // Set permissions and file types for this FileRoute
         .middleware(async ({ req }) => {
@@ -82,11 +93,17 @@ export const ourFileRouter = {
             // This code RUNS ON YOUR SERVER after upload
             console.log("Upload complete for userId:", metadata.userId);
             console.log("file url", file.url);
+            console.log("file type", file.type);
 
-            const webpUrl = await convertToWebP(file);
+            const { url: optimizedUrl, wasConverted } = await convertToWebP(file);
 
             // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
-            return { uploadedBy: metadata.userId, webpUrl };
+            return { 
+                uploadedBy: metadata.userId, 
+                webpUrl: optimizedUrl,
+                wasConverted,
+                originalType: file.type 
+            };
         }),
 } satisfies FileRouter;
 

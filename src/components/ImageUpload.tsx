@@ -40,16 +40,22 @@ export const ImageUpload = ({ value, onChange, endpoint = "imageUploader" }: Ima
                     console.log("Files: ", res);
                     const uploadedFile = res?.[0];
                     if (uploadedFile) {
-                        const webpUrl = uploadedFile.serverData?.webpUrl;
-                        // Use webpUrl if available, otherwise fall back to the uploaded file URL
+                        const optimizedUrl = uploadedFile.serverData?.webpUrl;
+                        const wasConverted = uploadedFile.serverData?.wasConverted;
+                        const originalType = uploadedFile.serverData?.originalType;
+                        
+                        // Use optimized URL if available, otherwise fall back to the uploaded file URL
                         // eslint-disable-next-line deprecation/deprecation
-                        const fileUrl = webpUrl || uploadedFile.url;
+                        const fileUrl = optimizedUrl || uploadedFile.url;
                         
                         onChange(fileUrl);
-                        if (webpUrl) {
-                            console.log("Using WebP optimized image:", webpUrl);
+                        
+                        if (optimizedUrl && wasConverted) {
+                            console.log(`✓ Image optimized to WebP from ${originalType}:`, optimizedUrl);
+                        } else if (optimizedUrl && !wasConverted) {
+                            console.log(`✓ Using ${originalType} (already optimized):`, optimizedUrl);
                         } else {
-                            console.warn("WebP conversion unavailable, using original image");
+                            console.warn(`⚠ Optimization unavailable, using ${originalType}`);
                         }
                         setError("");
                     }
